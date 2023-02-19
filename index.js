@@ -42,7 +42,4 @@ $(function () {
         return false;
     });
 	
-var obj = document.getElementById("product_id")
-obj.value = 2;
-	
 });
