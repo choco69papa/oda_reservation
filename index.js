@@ -19,6 +19,14 @@ $(function () {
         var names = $('select[name="names"]').val();
         var inquiries = $('textarea[name="inquiries"]').val();
     });
+	
+    // 送信
+    $('form').submit(function () {
+	var msg = `＊＊＊ご予約内容＊＊＊`;
+        sendText(msg);
+
+        return false;
+    });
 
     // 送信
     $('form').submit(function () {
@@ -28,15 +36,7 @@ $(function () {
         var names = $('select[name="names"]').val();
         var inquiries = $('textarea[name="inquiries"]').val();
 	    
-        var msg = `＊＊＊ご予約内容＊＊＊\n〓希望日：〓\n ${date}\n〓時間：〓\n ${minute}\n〓メニュー：〓\n ${names}\n〓問い合わせ内容：〓\n ${inquiries}`;
-        sendText(msg);
-
-        return false;
-    });
-	
-    // 送信
-    $('form').submit(function () {
-	var msg = `ご連絡が遅れる場合がございますが、\n確認後に返信致します。`;
+        var msg = `希望日： \n ${date}\n時間： \n ${minute}\nメニュー： \n ${names}\n問い合わせ内容：\n ${inquiries}`;
         sendText(msg);
 
         return false;
