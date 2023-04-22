@@ -5,13 +5,8 @@ $(function () {
         $('input[name="date"]').datepicker({
             dateFormat: 'yy年mm月dd日',
 	
-            // 昨日の日付以降を選択できなくする
-            minDate:0,
-        });  
-	    
-	
-	    $('.datepicker').datepicker({
-	beforeShowDay: function (date) {
+		
+            beforeShowDay: function (date) {
           
         if (date.getDay() == 0) {
             // 日曜日
@@ -20,11 +15,12 @@ $(function () {
             // 平日
             return [true, ''];
         }
-    }
-          
-});
-	    
-	    
+    }	
+		
+		
+            // 昨日の日付以降を選択できなくする
+            minDate:0,
+        });      
     });
 
 
