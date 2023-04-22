@@ -24,13 +24,6 @@ $(function () {
         var inquiries = $('textarea[name="inquiries"]').val();
     });
 	
-    // 送信
-    $('form').submit(function () {
-	var msg = `＊＊＊ご予約内容＊＊＊`;
-        sendText(msg);
-
-        return false;
-    });
 
     // 送信
     $('form').submit(function () {
