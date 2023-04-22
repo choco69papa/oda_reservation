@@ -4,6 +4,10 @@ $(function () {
     $(function () {
         $('input[name="date"]').datepicker({
             dateFormat: 'yy年mm月dd日',
+        
+            daysOfWeekDisabled: [1],  // デフォルト
+        // daysOfWeekDisabled: [0, 6]
+		
     // 昨日の日付以降を選択できなくする
             minDate:0
         });
