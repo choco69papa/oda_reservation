@@ -1,14 +1,20 @@
 $(function () {
-	
-    // カレンダー
-    $(function () {
-        $('input[name="date"]').datepicker({
-            dateFormat: 'yy年mm月dd日',
-            daysOfWeekDisabled: [1],
-            // 昨日の日付以降を選択できなくする
-            minDate:0,
-        });      
+    $('input[name="date"]').datepicker({
+        dateFormat: 'yy年mm月dd日',
+        minDate: 0,
+        beforeShowDay: function(date) {
+            // 曜日を取得
+            var dayOfWeek = date.getDay();
+            // 月曜日または第3火曜日の場合、選択不可にする
+            if (dayOfWeek === 1 || (dayOfWeek === 2 && Math.floor((date.getDate() - 1) / 7) === 2)) {
+                return [false];
+            } else {
+                return [true];
+            }
+        }
     });
+});
+
 
 
     // 予約フォームを表示する
