@@ -1,3 +1,4 @@
+// カレンダー
 $(function () {
     $('input[name="date"]').datepicker({
         dateFormat: 'yy年mm月dd日',
@@ -5,8 +6,8 @@ $(function () {
         beforeShowDay: function(date) {
             // 曜日を取得
             var dayOfWeek = date.getDay();
-            // 月曜日または第3火曜日の場合、選択不可にする
-            if (dayOfWeek === 1 || (dayOfWeek === 2 && Math.floor((date.getDate() - 1) / 7) === 2)) {
+            // 月曜日の場合、選択不可にする
+            if (dayOfWeek === 1) {
                 return [false];
             } else {
                 return [true];
@@ -14,6 +15,7 @@ $(function () {
         }
     });
 });
+
 
 
 
