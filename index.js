@@ -1,10 +1,11 @@
+$(function () {
     // カレンダー
     $(function () {
         $('input[name="date"]').datepicker({
-            dateFormat: 'yy年mm月dd日',
+             dateFormat: 'yy年mm月dd日',
             // 昨日の日付以降を選択できなくする
-            minDate: 0,
-        });      
+            minDate:0,
+        });
     }); 
 
 
