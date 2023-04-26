@@ -6,8 +6,8 @@ $(function () {
         minDate: 0,
         beforeShowDay: function(date) {
           var day = date.getDay();
-          var weekOfMonth = Math.ceil((date.getDate() - 5) / 7);
-          if (day === 5 || (day === 2 && weekOfMonth === 3)) {
+          var weekOfMonth = Math.ceil((date.getDate() - 1) / 7);
+          if (day === 1 || (day === 2 && weekOfMonth === 2)) {
             return [false];
           } else {
             return [true];
