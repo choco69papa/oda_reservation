@@ -1,21 +1,19 @@
 $(function () {
     // カレンダー
-$(function() {
-  $('input[name="dates"]').datepicker({
-    dateFormat: 'yy年mm月dd日',
-    minDate: 0,
-    beforeShowDay: function(date) {
-      var day = date.getDay();
-      if (day === 1 || (day === 2 && Math.ceil(date.getDate() / 7) === 3)) {
-        return [false];
-      } else {
-        return [true];
-      }
-    }
-  });
-});
-
-
+    $(function() {
+      $('input[name="dates"]').datepicker({
+        dateFormat: 'yy年mm月dd日',
+        minDate: 0,
+        beforeShowDay: function(date) {
+          var day = date.getDay();
+          if (day === 1 || (day === 2 && Math.ceil(date.getDate() / 7) === 3)) {
+            return [false];
+          } else {
+            return [true];
+          }
+        }
+      });
+    });
 
 
     // 予約フォームを表示する
