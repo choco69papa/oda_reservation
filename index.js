@@ -1,11 +1,10 @@
     // カレンダー
 $(function() {
-  $('#datepicker').datepicker({
-    // 昨日の日付以降を選択できなくする
-     minDate:0,
+  $('input[name="date"]').datepicker({
+    dateFormat: 'yy年mm月dd日',
+    minDate: 0,
     beforeShowDay: function(date) {
-      var day = date.getDay();
-      return [day != 1];
+      return [date.getDay() !== 1]; // 1は月曜日を表す
     }
   });
 });
