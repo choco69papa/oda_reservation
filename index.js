@@ -1,11 +1,14 @@
-// カレンダー
-    $(function () {
-        $('input[name="date"]').datepicker({
-            dateFormat: 'yy年mm月dd日',
-            // 昨日の日付以降を選択できなくする
-            minDate:0,
-        });      
-    }); 
+    // カレンダー
+$(function() {
+  $('#datepicker').datepicker({
+    // 昨日の日付以降を選択できなくする
+     minDate:0,
+    beforeShowDay: function(date) {
+      var day = date.getDay();
+      return [day != 1];
+    }
+  });
+});
 
 
     // 予約フォームを表示する
