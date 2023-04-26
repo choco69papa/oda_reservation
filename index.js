@@ -1,22 +1,11 @@
 // カレンダー
-$(function () {
-    $('input[name="date"]').datepicker({
-        dateFormat: 'yy年mm月dd日',
-        minDate: 0,
-        beforeShowDay: function(date) {
-            // 曜日を取得
-            var dayOfWeek = date.getDay();
-            // 月曜日の場合、選択不可にする
-            if (dayOfWeek === 1) {
-                return [false];
-            } else {
-                return [true];
-            }
-        }
-    });
-});
-
-
+    $(function () {
+        $('input[name="date"]').datepicker({
+            dateFormat: 'yy年mm月dd日',
+            // 昨日の日付以降を選択できなくする
+            minDate:0,
+        });      
+    }); 
 
 
     // 予約フォームを表示する
