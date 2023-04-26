@@ -1,12 +1,21 @@
 $(function () {
     // カレンダー
-    $(function () {
-        $('input[name="date"]').datepicker({
-             dateFormat: 'yy年mm月dd日',
-            // 昨日の日付以降を選択できなくする
-            minDate:0,
-        });
-    }); 
+    $(function() {
+      $('input[name="dattes"]').datepicker({
+        dateFormat: 'yy年mm月dd日',
+        minDate: 0,
+        beforeShowDay: function(date) {
+          var day = date.getDay();
+          var weekOfMonth = Math.ceil((date.getDate() - 1) / 7);
+          if (day === 1 || (day === 2 && weekOfMonth === 3)) {
+            return [false];
+          } else {
+            return [true];
+          }
+        }
+      });
+    });
+
 
 
 
