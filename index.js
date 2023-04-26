@@ -1,7 +1,7 @@
 $(function () {
     // カレンダー
 $(function() {
-  $('input[name="dates"]').datepicker({
+  $('input[name="date"]').datepicker({
     dateFormat: 'yy年mm月dd日',
     minDate: 0,
     beforeShowDay: function(date) {
