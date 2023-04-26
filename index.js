@@ -20,7 +20,7 @@ $(function() {
     // 予約フォームを表示する
     $('#form-number').click(function () {
         $('#form-name').empty();
-        var date = $('input[name="dattes"]').val();
+        var dattes = $('input[name="dattes"]').val();
         var num = $('input[name="number"]:checked').val();
         var minute = $('select[name="minute"]').val();
         var names = $('select[name="names"]').val();
@@ -30,7 +30,7 @@ $(function() {
 
     // 送信
     $('form').submit(function () {
-        var date = $('input[name="dattes"]').val();
+        var dattes = $('input[name="dattes"]').val();
         var number = $('input[name="number"]:checked').val();	
         var minute = $('select[name="minute"]').val();
         var names = $('select[name="names"]').val();
