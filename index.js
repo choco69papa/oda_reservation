@@ -1,20 +1,20 @@
 $(function () {
     // カレンダー
-    $(function() {
-      $('input[name="date"]').datepicker({
-        dateFormat: 'yy年mm月dd日',
-        minDate: 0,
-        beforeShowDay: function(date) {
-          var day = date.getDay();
-          var weekOfMonth = Math.ceil((date.getDate() - 1) / 7);
-          if (day === 1 || (day === 2 && weekOfMonth === 3)) {
-            return [false];
-          } else {
-            return [true];
-          }
-        }
-      });
-    });
+$(function() {
+  $('input[name="dates"]').datepicker({
+    dateFormat: 'yy年mm月dd日',
+    minDate: 0,
+    beforeShowDay: function(date) {
+      var day = date.getDay();
+      if (day === 1 || (day === 2 && Math.ceil(date.getDate() / 7) === 3)) {
+        return [false];
+      } else {
+        return [true];
+      }
+    }
+  });
+});
+
 
 
 
