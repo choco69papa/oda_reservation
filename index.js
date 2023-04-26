@@ -1,5 +1,4 @@
 $(function () {
-	
     // カレンダー
     $(function () {
         $('input[name="date"]').datepicker({
