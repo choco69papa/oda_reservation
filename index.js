@@ -14,11 +14,12 @@ $(function() {
     },
     timeFormat: 'HH:mm',
     controlType: 'select',
-    oneLine: true
+    oneLine: true,
+    stepMinutes: 60, // 1時間ごとに設定
+    minTime: '9:00', // 最小時刻
+    maxTime: '16:00' // 最大時刻
   });
 });
-
-
 
 
     // 予約フォームを表示する
