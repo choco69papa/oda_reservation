@@ -1,7 +1,7 @@
 $(function () {
     // カレンダー
 $(function() {
-  $('input[name="date"]').datepicker({
+  $('input[name="date"]').datetimepicker({
     dateFormat: 'yy年mm月dd日',
     minDate: 0,
     beforeShowDay: function(date) {
@@ -11,9 +11,13 @@ $(function() {
       } else {
         return [true];
       }
-    }
+    },
+    timeFormat: 'HH:mm',
+    controlType: 'select',
+    oneLine: true
   });
 });
+
 
 
 
