@@ -1,7 +1,7 @@
 $(function () {
     // カレンダー
 $(function() {
-  $('input[name="date"]').datetimepicker({
+  $('input[name="dates"]').datepicker({
     dateFormat: 'yy年mm月dd日',
     minDate: 0,
     beforeShowDay: function(date) {
@@ -11,40 +11,10 @@ $(function() {
       } else {
         return [true];
       }
-    },
-    timeFormat: 'HH:mm',
-    controlType: 'select',
-    oneLine: true,
-    showButtonPanel: false,
-    onSelect: function(dateText, inst) {
-      // 日付の選択時に時刻セレクトボックスを更新
-      updateSelectOptions(inst.input);
-    },
-    onClose: function(dateText, inst) {
-      // カレンダーを閉じた時に時刻セレクトボックスを更新
-      updateSelectOptions(inst.input);
     }
   });
-
-  // 時刻セレクトボックスのオプションを更新する関数
-  function updateSelectOptions(input) {
-    var selectedDate = $.datepicker.parseDate('yy年mm月dd日', input.value);
-    var startHour = 9; // 開始時刻（9時）
-    var endHour = 16; // 終了時刻（16時）
-    var stepMinutes = 60; // 間隔（1時間）
-
-    // 時刻セレクトボックスをクリア
-    $(input).next('.ui-timepicker-select').empty();
-
-    // 開始時刻から終了時刻までのオプションを追加
-    for (var hour = startHour; hour <= endHour; hour++) {
-      for (var minute = 0; minute < 60; minute += stepMinutes) {
-        var time = ('0' + hour).slice(-2) + ':' + ('0' + minute).slice(-2);
-        $(input).next('.ui-timepicker-select').append($('<option>').val(time).text(time));
-      }
-    }
-  }
 });
+
 
 	
 
