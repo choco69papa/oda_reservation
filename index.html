@@ -8,15 +8,17 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/themes/base/jquery-ui.min.css">
-    <link rel="stylesheet" href="//code.jquery.com/ui/1.13.0/themes/smoothness/jquery-ui.css">
-    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/jquery-ui-timepicker-addon/1.6.3/jquery-ui-timepicker-addon.min.css">
-
 </head>
 
 <body>
     <form class="w-75 mx-auto">
-
-        <p class="mt-3">以下に予約情報を入力して送信ボタンを押してください！</p>
+    <span style="color:#ff0000;">お急ぎの方はLINE電話からお願いします</span>
+        <p class="mt-3">予約情報を入力して送信ボタンを押してください。</p>
+        
+        <p class="mt-3">お名前</p>
+        <div>
+            <input type="text" name="namelabel" required></input>
+        </div>   
 
         <p class="mt-3">希望日</p>
         <div>
@@ -41,10 +43,13 @@
         <select class="form-control w-100 mt-1" name="names" required>
                 <option value="">メニューを選択</option>
                 <option value="カット">カット</option>
-                <option value="パーマ">パーマ</option>
-                <option value="カラー">カラー</option>
+                <option value="パーマ ＋ カット">パーマ ＋ カット</option>
+                <option value="カラー ＋ カット">カラー ＋ カット</option>
                 <option value="トリートメント">トリートメント</option>
-                <option value="縮毛矯正">縮毛矯正</option>
+                <option value="縮毛矯正 ＋ カット">縮毛矯正 ＋ カット</option>
+                <option value="まつ毛カール">まつ毛カール</option>
+                <option value="まつ毛エクステ">まつ毛エクステ</option>
+                <option value="トリートメントストレートパーマ">トリートメントストレートパーマ</option>
                 <option value="着付け">着付け</option>
        </select>
         
@@ -52,7 +57,9 @@
         <div>
             <textarea class="form-control w-100 mt-1" name="inquiries" rows="3" cols="40"></textarea>
         </div>
-      
+    <br>
+           <span style="color:#ff0000;">注）このフォームから申請いただいた時点では予約は完了していません。</span>
+    
         <input type="submit" class="mt-4 btn btn-primary" value="送信">
     </form>
 
@@ -61,9 +68,6 @@
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
-    <script src="//code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="//code.jquery.com/ui/1.13.0/jquery-ui.min.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery-ui-timepicker-addon/1.6.3/jquery-ui-timepicker-addon.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1/i18n/jquery.ui.datepicker-ja.min.js"></script>
     <script src="liff.js"></script>
     <script src="index.js"></script>
