@@ -29,6 +29,7 @@ $(function() {
         var date = $('input[name="date"]').val();
         var num = $('input[name="number"]:checked').val();
         var minute = $('select[name="minute"]').val();
+        var minute = $('select[name="minutes"]').val();
         var names = $('select[name="names"]').val();
         var inquiries = $('textarea[name="inquiries"]').val();
     });
@@ -39,6 +40,7 @@ $(function() {
         var date = $('input[name="date"]').val();
         var number = $('input[name="number"]:checked').val();	
         var minute = $('select[name="minute"]').val();
+        var minute = $('select[name="minutes"]').val();
         var names = $('select[name="names"]').val();
         var inquiries = $('textarea[name="inquiries"]').val();
 	    
