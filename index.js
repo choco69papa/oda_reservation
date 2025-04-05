@@ -29,7 +29,7 @@ $(function() {
         var date = $('input[name="date"]').val();
         var num = $('input[name="number"]:checked').val();
         var minute = $('select[name="minute"]').val();
-        var minute = $('select[name="minutes"]').val();
+        var minutes = $('select[name="minutes"]').val();
         var names = $('select[name="names"]').val();
         var inquiries = $('textarea[name="inquiries"]').val();
     });
@@ -40,11 +40,11 @@ $(function() {
         var date = $('input[name="date"]').val();
         var number = $('input[name="number"]:checked').val();	
         var minute = $('select[name="minute"]').val();
-        var minute = $('select[name="minutes"]').val();
+        var minutes = $('select[name="minutes"]').val();
         var names = $('select[name="names"]').val();
         var inquiries = $('textarea[name="inquiries"]').val();
 	    
-        var msg = `＊＊ご予約内容＊＊\nお名前：\n ${namelabel}\n希望日：\n ${date}\n時間：\n ${minute}\nメニュー：\n ${names}\n問い合わせ内容：\n ${inquiries}`;
+        var msg = `＊＊ご予約内容＊＊\nお名前：\n ${namelabel}\n希望日：\n ${date}\n時間：\n ${minute}\nメニュー：\n ${minutes}\nメニュー：\n ${names}\n問い合わせ内容：\n ${inquiries}`;
         sendText(msg);
 
         return false;
