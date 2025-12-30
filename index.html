@@ -1,40 +1,169 @@
-<p class="mt-3">ご希望の日時を選択してください</p>
-
-<input type="hidden" name="date" id="selected_date" required>
-<input type="hidden" name="minute" id="selected_time" required>
-
-<div class="calendar-wrapper">
-    <div class="week-nav">
-        <button type="button" id="prevWeek" class="btn btn-sm btn-outline-secondary">＜ 前の週</button>
-        <span id="currentMonthDisplay" style="font-weight:bold; margin: 0 10px;"></span>
-        <button type="button" id="nextWeek" class="btn btn-sm btn-outline-secondary">次の週 ＞</button>
-    </div>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>予約カレンダー</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
     
-    <div class="table-responsive mt-2">
-        <table class="table table-bordered text-center" id="bookingTable">
-            <thead class="thead-light">
-                <tr id="dateHeader">
-                    </tr>
-            </thead>
-            <tbody id="timeBody">
-                </tbody>
-        </table>
-    </div>
-</div>
+    <style>
+        body { padding: 20px; max-width: 600px; margin: 0 auto; }
+        
+        /* カレンダーのスタイル */
+        .calendar-wrapper { font-size: 12px; margin-top: 20px; }
+        .week-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .table-responsive { overflow-x: auto; }
+        .table th, .table td { vertical-align: middle; padding: 8px 4px; text-align: center; white-space: nowrap; }
+        
+        /* 〇と×のデザイン */
+        .time-slot { cursor: pointer; display: block; padding: 5px; border-radius: 4px; }
+        .symbol-ok { color: #28a745; font-weight: bold; font-size: 1.2em; }
+        .symbol-ng { color: #ccc; pointer-events: none; }
+        
+        /* 選択された時のデザイン */
+        .selected-slot { background-color: #007bff; color: white !important; }
+        .selected-slot .symbol-ok { color: white; }
+    </style>
+</head>
 
-<style>
-    .calendar-wrapper { font-size: 12px; }
-    .table th, .table td { vertical-align: middle; padding: 5px; }
-    /* 〇のデザイン */
-    .time-slot { cursor: pointer; font-size: 1.2em; display: block; padding: 10px 0; }
-    .symbol-ok { color: #28a745; font-weight: bold; } /* 緑の丸 */
-    .symbol-ng { color: #ccc; cursor: not-allowed; }   /* グレーの× */
-    
-    /* 選択された時のデザイン */
-    .selected-slot {
-        background-color: #007bff; /* 青背景 */
-        color: #fff !important;
-        border-radius: 4px;
-    }
-    .selected-slot .symbol-ok { color: #fff; }
-</style>
+<body>
+    <form class="w-100 mx-auto">
+        <h4 class="mb-3">予約日時選択</h4>
+        <span style="color:#ff0000; font-size:0.9rem;">お急ぎの方はLINE電話からお願いします</span>
+
+        <div class="calendar-wrapper">
+            <div class="week-nav">
+                <button type="button" id="prevWeek" class="btn btn-outline-secondary btn-sm">＜ 前の週</button>
+                <span id="currentMonthDisplay" style="font-weight:bold; font-size: 1.1em;"></span>
+                <button type="button" id="nextWeek" class="btn btn-outline-secondary btn-sm">次の週 ＞</button>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-bordered" id="bookingTable">
+                    <thead class="thead-light">
+                        <tr id="dateHeader"></tr>
+                    </thead>
+                    <tbody id="timeBody"></tbody>
+                </table>
+            </div>
+        </div>
+        <input type="hidden" name="namelabel" value="テスト太郎"> <input type="hidden" name="date" id="selected_date" required>
+        <input type="hidden" name="minute" id="selected_time" required>
+
+        <p class="mt-4">メニュー</p>
+        <select class="form-control" name="names">
+            <option value="カット">カット</option>
+            <option value="カラー">カラー</option>
+        </select>
+
+        <input type="submit" class="mt-4 btn btn-primary btn-block btn-lg" value="予約確認へ">
+    </form>
+
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+    <script>
+        // ▼▼▼ カレンダーのJavaScript ▼▼▼
+        
+        // 設定
+        let currentBaseDate = new Date(); // 今日の日付
+        const startHour = 9;  // 開始 9:00
+        const endHour = 18;   // 終了 18:00
+        const timeStep = 30;  // 30分刻み
+
+        // ページ読み込み完了時に実行
+        $(function() {
+            renderCalendar(currentBaseDate);
+
+            // 前の週へ
+            $('#prevWeek').click(function() {
+                currentBaseDate.setDate(currentBaseDate.getDate() - 7);
+                renderCalendar(currentBaseDate);
+            });
+
+            // 次の週へ
+            $('#nextWeek').click(function() {
+                currentBaseDate.setDate(currentBaseDate.getDate() + 7);
+                renderCalendar(currentBaseDate);
+            });
+
+            // 〇をクリックした時の動作
+            $(document).on('click', '.time-slot', function() {
+                // 他の選択を解除
+                $('.selected-slot').removeClass('selected-slot');
+                $('.symbol-ok').text('〇');
+
+                // 自分を選択状態にする
+                $(this).addClass('selected-slot');
+                $(this).find('.symbol-ok').text('選択');
+
+                // 値を保存
+                let d = $(this).data('date');
+                let t = $(this).data('time');
+                $('#selected_date').val(d);
+                $('#selected_time').val(t);
+
+                console.log("選択:", d, t); // 確認用
+            });
+        });
+
+        // カレンダーを描画する関数
+        function renderCalendar(baseDate) {
+            const $header = $('#dateHeader');
+            const $body = $('#timeBody');
+            $header.empty();
+            $body.empty();
+
+            // 月を表示
+            $('#currentMonthDisplay').text((baseDate.getMonth() + 1) + "月");
+
+            // 1. 日付ヘッダー作成
+            let weekDates = [];
+            let tempDate = new Date(baseDate);
+            $header.append('<th>時間</th>'); // 左上の空セル
+
+            const days = ['日', '月', '火', '水', '木', '金', '土'];
+
+            for (let i = 0; i < 7; i++) {
+                let m = tempDate.getMonth() + 1;
+                let d = tempDate.getDate();
+                let w = tempDate.getDay();
+                let fullDate = `${tempDate.getFullYear()}年${m}月${d}日`;
+                weekDates.push(fullDate);
+
+                let colorClass = (w === 0) ? 'text-danger' : (w === 6) ? 'text-primary' : '';
+                
+                $header.append(`<th class="${colorClass}">${d}<br><small>(${days[w]})</small></th>`);
+                tempDate.setDate(tempDate.getDate() + 1);
+            }
+
+            // 2. 時間割作成
+            for (let h = startHour; h < endHour; h++) {
+                for (let min = 0; min < 60; min += timeStep) {
+                    let timeStr = `${h}:${('0'+min).slice(-2)}`;
+                    let rowHtml = `<tr><td class="bg-light font-weight-bold">${timeStr}</td>`;
+
+                    for (let i = 0; i < 7; i++) {
+                        let dateStr = weekDates[i];
+                        
+                        // 定休日などの仮判定（例: 月曜日は×）
+                        let checkDay = new Date(dateStr.replace(/年|月/g, '/').replace('日', ''));
+                        let isNG = (checkDay.getDay() === 1); // 月曜ならtrue
+
+                        if (isNG) {
+                            rowHtml += `<td><span class="symbol-ng">×</span></td>`;
+                        } else {
+                            rowHtml += `<td>
+                                <div class="time-slot" data-date="${dateStr}" data-time="${timeStr}">
+                                    <span class="symbol-ok">〇</span>
+                                </div>
+                            </td>`;
+                        }
+                    }
+                    rowHtml += '</tr>';
+                    $body.append(rowHtml);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
