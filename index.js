@@ -10,7 +10,8 @@ $(function () {
     // 日曜日から始まるように調整
     currentBaseDate.setDate(currentBaseDate.getDate() - currentBaseDate.getDay());
 
-    const startH = 9, endH = 17; // 9:00 〜 16:30
+    const startH = 9;  // 開始 9:00
+    const endH = 17;   // 終了 16:00 (17:00まで選択肢として出す場合は18にするなど調整可)
 
     function renderCalendar(baseDate) {
         const $header = $('#dateHeader');
@@ -33,7 +34,7 @@ $(function () {
             let m = tempDate.getMonth() + 1;
             let d = tempDate.getDate();
             let w = tempDate.getDay();
-            let fullDate = `${tempDate.getFullYear()}/${m}/${d}`; // 判定用にスラッシュ区切り
+            let fullDate = `${tempDate.getFullYear()}/${m}/${d}`; // 判定用
             let displayDate = `${tempDate.getFullYear()}年${('0'+m).slice(-2)}月${('0'+d).slice(-2)}日`;
             
             weekDates.push({ fullDate: fullDate, displayDate: displayDate });
@@ -43,32 +44,31 @@ $(function () {
             tempDate.setDate(tempDate.getDate() + 1);
         }
 
-        // 時間枠（30分刻み）の作成
+        // 時間枠（1時間刻み）の作成
         for (let h = startH; h < endH; h++) {
-            [0, 30].forEach(min => {
-                let timeStr = `${h}:${('0'+min).slice(-2)}`;
-                let row = `<tr><td class="bg-light font-weight-bold">${timeStr}</td>`;
+            let timeStr = `${h}:00`;
+            let timeLabel = `${h}：00～`; // 送信用ラベル
+            let row = `<tr><td class="bg-light font-weight-bold">${h}:00</td>`;
+            
+            weekDates.forEach((dateObj) => {
+                let dObj = new Date(dateObj.fullDate + " " + timeStr);
                 
-                weekDates.forEach((dateObj) => {
-                    let dObj = new Date(dateObj.fullDate + " " + timeStr);
-                    
-                    // 1. 定休日判定（毎週月曜・第三火曜）
-                    let isMonday = (dObj.getDay() === 1);
-                    let isThirdTuesday = (dObj.getDay() === 2 && Math.ceil(dObj.getDate() / 7) === 3);
-                    
-                    // 2. 過去判定（今日より前、または今日の過ぎた時間）
-                    let isPast = (dObj < now);
+                // 1. 定休日判定（毎週月曜・第三火曜）
+                let isMonday = (dObj.getDay() === 1);
+                let isThirdTuesday = (dObj.getDay() === 2 && Math.ceil(dObj.getDate() / 7) === 3);
+                
+                // 2. 過去判定（今日より前、または今日の過ぎた時間）
+                let isPast = (dObj < now);
 
-                    if (isMonday || isThirdTuesday || isPast) {
-                        row += `<td><span class="symbol-ng">×</span></td>`;
-                    } else {
-                        row += `<td><div class="time-slot" data-date="${dateObj.displayDate}" data-time="${timeStr}：00～">
-                                    <span class="symbol-ok">〇</span>
-                                </div></td>`;
-                    }
-                });
-                $body.append(row + '</tr>');
+                if (isMonday || isThirdTuesday || isPast) {
+                    row += `<td><span class="symbol-ng">×</span></td>`;
+                } else {
+                    row += `<td><div class="time-slot" data-date="${dateObj.displayDate}" data-time="${timeLabel}">
+                                <span class="symbol-ok">〇</span>
+                            </div></td>`;
+                }
             });
+            $body.append(row + '</tr>');
         }
     }
 
