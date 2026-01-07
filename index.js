@@ -1,5 +1,5 @@
 // ▼▼▼ 以下2行を必ずご自身のものに書き換えてください ▼▼▼
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzbMVsrdEcxcyJtHNYZWwC0BzkdYSKGO8cvnLogsDqQtyTbMI33Ztu2k3g4c0JEJBs2/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbz8xxli8JZxNZ_-iNZh6NtAo983UTWIlXqeIXRwqPNBvvf1RwUWn2TheLL2gZnjh_0i/exec";
 const MY_LIFF_ID = "https://choco69papa.github.io/oda_reservation/";
 // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
