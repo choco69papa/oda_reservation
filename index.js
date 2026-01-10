@@ -1,6 +1,6 @@
 $(function () {
     // =================================================================
-    // ★設定エリア：成功した「GASのURL」をここに貼ってください
+    // ★設定エリア：GASのURL
     // =================================================================
     const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyfhQJ5g-enJbKIcZbmtWKCIPNhRYhFBBoOaQ8W7KLWRLwgVYP5pwZHtKjrMMEXzT6L/exec';
 
@@ -28,15 +28,12 @@ $(function () {
     function fetchAndRender() {
         $('#loadingMsg').show();
         
-        // GASからデータを取得
-        fetch(GAS_API_URL)
+        // ★キャッシュ対策：URLの後ろに時間をくっつけて、毎回必ず新しいデータを取ってくるようにする
+        const bustCache = '?t=' + new Date().getTime();
+
+        fetch(GAS_API_URL + bustCache)
             .then(response => response.json())
             .then(data => {
-                // ★★★★★★★ デバッグ用：強制表示 ★★★★★★★
-                // これでスマホ画面に「GASから届いたデータの中身」が表示されます
-                alert("【デバッグ確認】\n届いたデータ:\n" + JSON.stringify(data));
-                // ★★★★★★★★★★★★★★★★★★★★★★★★★
-
                 console.log("予約済みリスト:", data);
                 bookedSlots = data;
                 renderCalendar(currentBaseDate);
@@ -44,7 +41,7 @@ $(function () {
             })
             .catch(error => {
                 console.error(error);
-                alert("データの読み込みに失敗しました:\n" + error);
+                // エラーでもカレンダーは描画する
                 renderCalendar(currentBaseDate); 
                 $('#loadingMsg').hide();
             });
@@ -71,9 +68,7 @@ $(function () {
             let d = tempDate.getDate();
             let w = tempDate.getDay();
             
-            // 照合用日付 (例: 2026/1/10)
             let fullDate = `${tempDate.getFullYear()}/${m}/${d}`; 
-            // 表示用日付
             let displayDate = `${tempDate.getFullYear()}年${('0'+m).slice(-2)}月${('0'+d).slice(-2)}日`;
             
             weekDates.push({ fullDate: fullDate, displayDate: displayDate });
@@ -92,15 +87,11 @@ $(function () {
             
             weekDates.forEach((dateObj) => {
                 let dObj = new Date(dateObj.fullDate + " " + timeStr);
-                
-                // 照合用キー (例: 2026/1/10 9:00)
                 let checkKey = dateObj.fullDate + " " + timeStr;
 
                 let isMonday = (dObj.getDay() === 1);
                 let isThirdTuesday = (dObj.getDay() === 2 && Math.ceil(dObj.getDate() / 7) === 3);
                 let isPast = (dObj < now);
-                
-                // 予約済み判定
                 let isBooked = bookedSlots.includes(checkKey);
 
                 if (isMonday || isThirdTuesday || isPast || isBooked) {
@@ -118,7 +109,7 @@ $(function () {
     // 初回実行
     fetchAndRender();
 
-    // ボタン操作など
+    // ボタン操作
     $('#prevWeek').on('click', function(e){ e.preventDefault(); currentBaseDate.setDate(currentBaseDate.getDate() - 7); renderCalendar(currentBaseDate); });
     $('#nextWeek').on('click', function(e){ e.preventDefault(); currentBaseDate.setDate(currentBaseDate.getDate() + 7); renderCalendar(currentBaseDate); });
 
