@@ -1,53 +1,46 @@
 $(function () {
     // =================================================================
-    // ★設定エリア：ここに「シークレットモードで動いたURL」を貼ってください
+    // ★設定エリア：新しいデプロイURLをここに貼ってください
     // =================================================================
-    const GAS_API_URL = 'https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLhi2oO7oYT8jY4Oz9c_GMIh7-ro5bGDpePvSTmPdJhZ5QLJlMtH57DRJEuKT6NCoL550uLY-PNGyzv_8Udf3nQKwuVQ9RTavF6H8M_Gf8Nu3Is1Ca6ljlIgRcJZmsZ_wmwJdjwYWowlorwk9ruXJz1JIezh2MaXUg-swLHSyOPcOiM3pvqwwTNvpMNKnZePR2ZUN0oIxOfA1r814xozyxhe1XJgjizNUJOVaqpv1q1JwtPnhFsoOmXGR4gv9GJVSUM-4bXupMWAUmCKztMBU0YJP8EsfA&lib=MwEfIsBinZcZ-nfMENVujXv1jsbRDKtsU';
+    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzxZRuvjfmievN-4d4Lack3cl40d3mWegDthbBsg4gn7lnoRy50SdBnLGgqOb3Bde0H/exec';
 
-    // LIFFの初期化
+    // ページ読み込み時にフォームの送信先（宛先）をGASに設定する
+    $('form').attr('action', GAS_API_URL);
+
+    // LIFF初期化
     initializeLiff();
 
-    // 既存：お名前の自動入力処理
+    // 既存処理
     $('#form-number').click(function () {
         $('#form-name').empty();
         var namelabel = $('input[name="namelabel"]').val();
     });
 
-    // --- カレンダー用の変数設定 ---
+    // --- カレンダー変数 ---
     let currentBaseDate = new Date();
-    // 日曜日から始まるように調整
     currentBaseDate.setDate(currentBaseDate.getDate() - currentBaseDate.getDay());
-
-    const startH = 9;  // 開始時間 9:00
-    const endH = 17;   // 終了時間 16:00
-
-    // 予約済みリスト
+    const startH = 9;  
+    const endH = 17;   
     let bookedSlots = [];
 
-    // =================================================================
-    // 1. 予約状況を取得してカレンダーを表示する (読み込み)
-    // =================================================================
+    // --- 読み込み処理（ここはFetchのままでOK、GETは動くため） ---
     function fetchAndRender() {
-        $('#timeBody').html('<tr><td colspan="8" class="text-center py-4"><i class="fa fa-spinner fa-spin"></i> 予約状況を確認中...</td></tr>');
-
-        // ★読み込みも安定性の高い fetch に変更しました
+        $('#loadingMsg').show();
         fetch(GAS_API_URL)
             .then(response => response.json())
             .then(data => {
-                console.log("予約データ取得成功:", data);
                 bookedSlots = data;
                 renderCalendar(currentBaseDate);
+                $('#loadingMsg').hide();
             })
             .catch(error => {
-                console.error("読み込みエラー:", error);
-                alert("予約状況の取得に失敗しました。画面を再読み込みしてください。");
-                renderCalendar(currentBaseDate);
+                console.error(error);
+                renderCalendar(currentBaseDate); // エラーでもカレンダーは出す
+                $('#loadingMsg').hide();
             });
     }
 
-    // =================================================================
-    // 2. カレンダーを描画する関数
-    // =================================================================
+    // --- カレンダー描画 ---
     function renderCalendar(baseDate) {
         const $header = $('#dateHeader');
         const $body = $('#timeBody');
@@ -57,31 +50,23 @@ $(function () {
         $header.empty().append('<th>時間</th>');
         $body.empty();
         
-        let monthText = (baseDate.getMonth() + 1) + "月";
-        $('#currentMonthDisplay').text(monthText);
+        $('#currentMonthDisplay').text((baseDate.getMonth() + 1) + "月");
 
         let weekDates = [];
         let tempDate = new Date(baseDate);
 
-        // 7日分のヘッダー作成
         for (let i = 0; i < 7; i++) {
             let m = tempDate.getMonth() + 1;
             let d = tempDate.getDate();
             let w = tempDate.getDay();
-            
-            // GASデータとの照合用キー (例: 2026/1/10)
             let fullDate = `${tempDate.getFullYear()}/${m}/${d}`; 
-            // 表示用
             let displayDate = `${tempDate.getFullYear()}年${('0'+m).slice(-2)}月${('0'+d).slice(-2)}日`;
-            
             weekDates.push({ fullDate: fullDate, displayDate: displayDate });
-            
             let color = (w === 0) ? 'text-danger' : (w === 6) ? 'text-primary' : '';
             $header.append(`<th class="${color}">${d}<br><small>(${days[w]})</small></th>`);
             tempDate.setDate(tempDate.getDate() + 1);
         }
 
-        // 時間枠の作成
         for (let h = startH; h < endH; h++) {
             let timeStr = `${h}:00`; 
             let timeLabel = `${h}：00～`;
@@ -89,11 +74,7 @@ $(function () {
             
             weekDates.forEach((dateObj) => {
                 let dObj = new Date(dateObj.fullDate + " " + timeStr);
-                
-                // 判定用キー
                 let checkKey = dateObj.fullDate + " " + timeStr;
-
-                // NG条件判定
                 let isMonday = (dObj.getDay() === 1);
                 let isThirdTuesday = (dObj.getDay() === 2 && Math.ceil(dObj.getDate() / 7) === 3);
                 let isPast = (dObj < now);
@@ -102,31 +83,18 @@ $(function () {
                 if (isMonday || isThirdTuesday || isPast || isBooked) {
                     row += `<td><span class="symbol-ng">×</span></td>`;
                 } else {
-                    row += `<td><div class="time-slot" data-date="${dateObj.displayDate}" data-time="${timeLabel}">
-                                <span class="symbol-ok">〇</span>
-                            </div></td>`;
+                    row += `<td><div class="time-slot" data-date="${dateObj.displayDate}" data-time="${timeLabel}"><span class="symbol-ok">〇</span></div></td>`;
                 }
             });
             $body.append(row + '</tr>');
         }
     }
 
-    // 初回実行
     fetchAndRender();
 
-    // 週切り替えボタン
-    $('#prevWeek').on('click', function(e){ 
-        e.preventDefault(); 
-        currentBaseDate.setDate(currentBaseDate.getDate() - 7); 
-        renderCalendar(currentBaseDate); 
-    });
-    $('#nextWeek').on('click', function(e){ 
-        e.preventDefault(); 
-        currentBaseDate.setDate(currentBaseDate.getDate() + 7); 
-        renderCalendar(currentBaseDate); 
-    });
+    $('#prevWeek').on('click', function(e){ e.preventDefault(); currentBaseDate.setDate(currentBaseDate.getDate() - 7); renderCalendar(currentBaseDate); });
+    $('#nextWeek').on('click', function(e){ e.preventDefault(); currentBaseDate.setDate(currentBaseDate.getDate() + 7); renderCalendar(currentBaseDate); });
 
-    // 日時選択時の動作
     $(document).on('click', '.time-slot', function() {
         $('.selected-slot').removeClass('selected-slot');
         $(this).addClass('selected-slot');
@@ -135,87 +103,60 @@ $(function () {
     });
 
     // =================================================================
-    // 3. 送信ボタンを押した時の処理 (書き込み)
+    // 送信処理（シンプル版）
     // =================================================================
+    let submitted = false;
+
+    // 送信ボタンが押されたら...
     $('form').submit(function (e) {
-        e.preventDefault();
-        
-        // 入力値を取得
-        var namelabel = $('input[name="namelabel"]').val();
         var date = $('#selected_date').val();
         var minute = $('#selected_time').val();
-        var names = $('select[name="names"]').val();
-        var inquiries = $('textarea[name="inquiries"]').val();
         
         if(!date || !minute) {
             alert("予約日時を選択してください");
-            return false;
+            return false; // 送信中止
         }
-
-        // ボタンを無効化（二重送信防止）
-        var $submitBtn = $('input[type="submit"]');
-        $submitBtn.prop('disabled', true).val('送信中...');
-
-        // ★ここを fetch に変更（GASのエラー対策）
-        fetch(GAS_API_URL, {
-            method: 'POST',
-            body: new URLSearchParams({
-                date: date,
-                time: minute,
-                name: namelabel,
-                menu: names,
-                inquiry: inquiries
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log("保存成功:", data);
-
-            // LINEメッセージ作成
-            var msg = `＊＊ご予約内容＊＊\nお名前：\n ${namelabel}\n希望日：\n ${date}\n時間：\n ${minute}\nメニュー：\n ${names}\n問い合わせ内容：\n ${inquiries}`;
-            
-            sendText(msg); // LINE送信へ
-        })
-        .catch(error => {
-            console.error("保存エラー:", error);
-            alert("予約の保存に失敗しました。通信環境の良い場所で再度お試しください。");
-            $submitBtn.prop('disabled', false).val('送信');
-        });
-
-        return false;
+        
+        // 必須チェックOKなら、フラグを立ててそのまま送信させる（HTMLに任せる）
+        submitted = true;
+        $('input[type="submit"]').prop('disabled', true).val('送信中...');
     });
 
-    // =================================================================
+    // 裏方のiframeが「完了」したら動く処理
+    $('#hidden_iframe').on('load', function() {
+        if(submitted) {
+            // LINE送信用のメッセージ作成
+            var namelabel = $('input[name="namelabel"]').val();
+            var date = $('#selected_date').val();
+            var minute = $('#selected_time').val();
+            var names = $('select[name="names"]').val();
+            var inquiries = $('textarea[name="inquiries"]').val();
+
+            var msg = `＊＊ご予約内容＊＊\nお名前：\n ${namelabel}\n希望日：\n ${date}\n時間：\n ${minute}\nメニュー：\n ${names}\n問い合わせ内容：\n ${inquiries}`;
+            
+            sendText(msg);
+        }
+    });
+
     // LIFF関連
-    // =================================================================
     function initializeLiff() {
-        // LIFF IDはliff.jsなどで設定されている前提
-        liff.init({ liffId: "LIFF_ID_HERE" }) // 必要に応じてIDを入れる
-            .then(() => {
-                if (!liff.isLoggedIn()) {
-                    liff.login();
-                }
-            })
-            .catch((err) => {
-                console.log('LIFF Initialization failed ', err);
-            });
+        liff.init({ liffId: "LIFF_ID_HERE" }) // ※必要ならIDを入れる
+            .then(() => { if (!liff.isLoggedIn()) { liff.login(); } })
+            .catch((err) => { console.log('LIFF Init failed ', err); });
     }
 
     function sendText(text) {
         if (!liff.isInClient()) {
-            alert('予約完了しました！(LINE外のためメッセージは送信されません)');
+            alert('予約完了しました！');
             window.location.reload();
             return;
         }
-
-        liff.sendMessages([{
-            'type': 'text',
-            'text': text
-        }]).then(function () {
-            liff.closeWindow(); 
-        }).catch(function (error) {
-            window.alert('メッセージ送信に失敗: ' + error);
-            $('input[type="submit"]').prop('disabled', false).val('送信');
-        });
+        liff.sendMessages([{ 'type': 'text', 'text': text }])
+            .then(function () { liff.closeWindow(); })
+            .catch(function (error) {
+                // LINE送信失敗しても予約自体は完了しているのでリロード
+                alert('予約は完了しましたが、LINEメッセージが送れませんでした。');
+                window.location.reload();
+            });
     }
 });
