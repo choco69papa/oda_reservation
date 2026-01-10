@@ -2,7 +2,7 @@ $(function () {
     // =================================================================
     // ★設定エリア：ここにGASのウェブアプリURLを貼り付けてください
     // =================================================================
-    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbw9MId3CyPalJ_GYl40nte24c2-MWBoZm2wE8ApBncU7TyOJxGKWthE0YlTJe5tVUOt/exec';
+    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxEROcIusSFfJiU57Rhgo5mZ8ZdI6JE3MaSSf9YyDL9Eb1AMReWLS-azgaPNF71e5C4/exec';
 
     // LIFFの初期化 (LINEから開いた時に必要)
     initializeLiff();
