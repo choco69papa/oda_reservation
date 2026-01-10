@@ -2,7 +2,7 @@ $(function () {
     // =================================================================
     // ★設定エリア：成功した「GASのURL」をここに貼ってください
     // =================================================================
-    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzxZRuvjfmievN-4d4Lack3cl40d3mWegDthbBsg4gn7lnoRy50SdBnLGgqOb3Bde0H/exec';
+    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyfhQJ5g-enJbKIcZbmtWKCIPNhRYhFBBoOaQ8W7KLWRLwgVYP5pwZHtKjrMMEXzT6L/exec';
 
     // ページ読み込み時にフォームの送信先（宛先）をGASに設定する
     $('form').attr('action', GAS_API_URL);
@@ -27,16 +27,24 @@ $(function () {
     // --- 読み込み処理 ---
     function fetchAndRender() {
         $('#loadingMsg').show();
+        
+        // GASからデータを取得
         fetch(GAS_API_URL)
             .then(response => response.json())
             .then(data => {
-                console.log("予約済みリスト:", data); // 確認用ログ
+                // ★★★★★★★ デバッグ用：強制表示 ★★★★★★★
+                // これでスマホ画面に「GASから届いたデータの中身」が表示されます
+                alert("【デバッグ確認】\n届いたデータ:\n" + JSON.stringify(data));
+                // ★★★★★★★★★★★★★★★★★★★★★★★★★
+
+                console.log("予約済みリスト:", data);
                 bookedSlots = data;
                 renderCalendar(currentBaseDate);
                 $('#loadingMsg').hide();
             })
             .catch(error => {
                 console.error(error);
+                alert("データの読み込みに失敗しました:\n" + error);
                 renderCalendar(currentBaseDate); 
                 $('#loadingMsg').hide();
             });
@@ -57,16 +65,15 @@ $(function () {
         let weekDates = [];
         let tempDate = new Date(baseDate);
 
-        // ヘッダー（日付）作成
+        // ヘッダー作成
         for (let i = 0; i < 7; i++) {
             let m = tempDate.getMonth() + 1;
             let d = tempDate.getDate();
             let w = tempDate.getDay();
             
-            // ★重要：データの照合に使う「シンプルな日付」 (例: 2026/1/10)
+            // 照合用日付 (例: 2026/1/10)
             let fullDate = `${tempDate.getFullYear()}/${m}/${d}`; 
-            
-            // 表示用 (例: 2026年01月10日)
+            // 表示用日付
             let displayDate = `${tempDate.getFullYear()}年${('0'+m).slice(-2)}月${('0'+d).slice(-2)}日`;
             
             weekDates.push({ fullDate: fullDate, displayDate: displayDate });
@@ -78,15 +85,15 @@ $(function () {
 
         // 時間枠作成
         for (let h = startH; h < endH; h++) {
-            let timeStr = `${h}:00`;     // ★シンプル時間（判定・保存用）
-            let timeLabel = `${h}：00～`; // 表示用（画面に出す文字）
+            let timeStr = `${h}:00`;     
+            let timeLabel = `${h}：00～`; 
             
             let row = `<tr><td class="bg-light font-weight-bold">${timeStr}</td>`;
             
             weekDates.forEach((dateObj) => {
                 let dObj = new Date(dateObj.fullDate + " " + timeStr);
                 
-                // 判定用キー (例: 2026/1/10 9:00)
+                // 照合用キー (例: 2026/1/10 9:00)
                 let checkKey = dateObj.fullDate + " " + timeStr;
 
                 let isMonday = (dObj.getDay() === 1);
@@ -99,7 +106,6 @@ $(function () {
                 if (isMonday || isThirdTuesday || isPast || isBooked) {
                     row += `<td><span class="symbol-ng">×</span></td>`;
                 } else {
-                    // ★ここを修正しました！ data-date と data-time に「シンプルな値」を入れるように変更
                     row += `<td><div class="time-slot" data-date="${dateObj.fullDate}" data-time="${timeStr}">
                                 <span class="symbol-ok">〇</span>
                             </div></td>`;
@@ -109,8 +115,10 @@ $(function () {
         }
     }
 
+    // 初回実行
     fetchAndRender();
 
+    // ボタン操作など
     $('#prevWeek').on('click', function(e){ e.preventDefault(); currentBaseDate.setDate(currentBaseDate.getDate() - 7); renderCalendar(currentBaseDate); });
     $('#nextWeek').on('click', function(e){ e.preventDefault(); currentBaseDate.setDate(currentBaseDate.getDate() + 7); renderCalendar(currentBaseDate); });
 
@@ -122,7 +130,7 @@ $(function () {
     });
 
     // =================================================================
-    // 送信処理（シンプル版）
+    // 送信処理
     // =================================================================
     let submitted = false;
 
