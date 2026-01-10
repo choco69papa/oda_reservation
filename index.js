@@ -2,7 +2,7 @@ $(function () {
     // =================================================================
     // ★設定エリア：ここにGASのウェブアプリURLを貼り付けてください
     // =================================================================
-    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxEROcIusSFfJiU57Rhgo5mZ8ZdI6JE3MaSSf9YyDL9Eb1AMReWLS-azgaPNF71e5C4/exec';
+    const GAS_API_URL = 'https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLhi2oO7oYT8jY4Oz9c_GMIh7-ro5bGDpePvSTmPdJhZ5QLJlMtH57DRJEuKT6NCoL550uLY-PNGyzv_8Udf3nQKwuVQ9RTavF6H8M_Gf8Nu3Is1Ca6ljlIgRcJZmsZ_wmwJdjwYWowlorwk9ruXJz1JIezh2MaXUg-swLHSyOPcOiM3pvqwwTNvpMNKnZePR2ZUN0oIxOfA1r814xozyxhe1XJgjizNUJOVaqpv1q1JwtPnhFsoOmXGR4gv9GJVSUM-4bXupMWAUmCKztMBU0YJP8EsfA&lib=MwEfIsBinZcZ-nfMENVujXv1jsbRDKtsU';
 
     // LIFFの初期化 (LINEから開いた時に必要)
     initializeLiff();
