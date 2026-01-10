@@ -1,6 +1,6 @@
 $(function () {
     // ★★★重要：ここにGASのウェブアプリURLを貼り付けてください★★★
-    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwl9pHsuA-pNPuKcF1WtxmDAtXhIqIEMU6DAIimgOuzmYWocrxG9zbSyXtR50ikCp6j/exec';
+    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzYwb69dHjo3NB4UqYyH0kzrHYBV7a3C0QIUaz6KEZALPLjylWyYvLSvcjdvKrcCgRR/exec';
 
     // 既存：お名前の処理
     $('#form-number').click(function () {
