@@ -1,13 +1,13 @@
 $(function () {
     // =================================================================
-    // ★設定エリア：ここにGASのウェブアプリURLを貼り付けてください
+    // ★設定エリア：ここに「シークレットモードで動いたURL」を貼ってください
     // =================================================================
     const GAS_API_URL = 'https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLhi2oO7oYT8jY4Oz9c_GMIh7-ro5bGDpePvSTmPdJhZ5QLJlMtH57DRJEuKT6NCoL550uLY-PNGyzv_8Udf3nQKwuVQ9RTavF6H8M_Gf8Nu3Is1Ca6ljlIgRcJZmsZ_wmwJdjwYWowlorwk9ruXJz1JIezh2MaXUg-swLHSyOPcOiM3pvqwwTNvpMNKnZePR2ZUN0oIxOfA1r814xozyxhe1XJgjizNUJOVaqpv1q1JwtPnhFsoOmXGR4gv9GJVSUM-4bXupMWAUmCKztMBU0YJP8EsfA&lib=MwEfIsBinZcZ-nfMENVujXv1jsbRDKtsU';
 
-    // LIFFの初期化 (LINEから開いた時に必要)
+    // LIFFの初期化
     initializeLiff();
 
-    // 既存：お名前の自動入力処理（もしform-numberというIDがある場合）
+    // 既存：お名前の自動入力処理
     $('#form-number').click(function () {
         $('#form-name').empty();
         var namelabel = $('input[name="namelabel"]').val();
@@ -19,32 +19,30 @@ $(function () {
     currentBaseDate.setDate(currentBaseDate.getDate() - currentBaseDate.getDay());
 
     const startH = 9;  // 開始時間 9:00
-    const endH = 17;   // 終了時間 16:00 (17:00まで表示したい場合は18にする)
+    const endH = 17;   // 終了時間 16:00
 
-    // 予約済みリスト（GASから取得したデータをここに入れる）
+    // 予約済みリスト
     let bookedSlots = [];
 
     // =================================================================
-    // 1. 予約状況を取得してカレンダーを表示する関数 (GET処理)
+    // 1. 予約状況を取得してカレンダーを表示する (読み込み)
     // =================================================================
     function fetchAndRender() {
-        // カレンダー部分を読み込み中表示にする
         $('#timeBody').html('<tr><td colspan="8" class="text-center py-4"><i class="fa fa-spinner fa-spin"></i> 予約状況を確認中...</td></tr>');
 
-        $.ajax({
-            url: GAS_API_URL,
-            type: 'GET',
-            dataType: 'json',
-            success: function(data) {
+        // ★読み込みも安定性の高い fetch に変更しました
+        fetch(GAS_API_URL)
+            .then(response => response.json())
+            .then(data => {
                 console.log("予約データ取得成功:", data);
-                bookedSlots = data; // 例: ["2026/1/10 10:00", "2026/1/11 14:00"]
+                bookedSlots = data;
                 renderCalendar(currentBaseDate);
-            },
-            error: function() {
+            })
+            .catch(error => {
+                console.error("読み込みエラー:", error);
                 alert("予約状況の取得に失敗しました。画面を再読み込みしてください。");
-                renderCalendar(currentBaseDate); // エラーでも一応カレンダーは出す
-            }
-        });
+                renderCalendar(currentBaseDate);
+            });
     }
 
     // =================================================================
@@ -59,7 +57,6 @@ $(function () {
         $header.empty().append('<th>時間</th>');
         $body.empty();
         
-        // 月の表示更新
         let monthText = (baseDate.getMonth() + 1) + "月";
         $('#currentMonthDisplay').text(monthText);
 
@@ -72,9 +69,9 @@ $(function () {
             let d = tempDate.getDate();
             let w = tempDate.getDay();
             
-            // GASデータとの照合用キー (例: 2026/1/10) ※ゼロ埋めなし
+            // GASデータとの照合用キー (例: 2026/1/10)
             let fullDate = `${tempDate.getFullYear()}/${m}/${d}`; 
-            // 表示用 (例: 2026年01月10日)
+            // 表示用
             let displayDate = `${tempDate.getFullYear()}年${('0'+m).slice(-2)}月${('0'+d).slice(-2)}日`;
             
             weekDates.push({ fullDate: fullDate, displayDate: displayDate });
@@ -84,30 +81,24 @@ $(function () {
             tempDate.setDate(tempDate.getDate() + 1);
         }
 
-        // 時間枠（1時間刻み）の作成
+        // 時間枠の作成
         for (let h = startH; h < endH; h++) {
             let timeStr = `${h}:00`; 
-            let timeLabel = `${h}：00～`; // 送信時の表記
+            let timeLabel = `${h}：00～`;
             let row = `<tr><td class="bg-light font-weight-bold">${h}:00</td>`;
             
             weekDates.forEach((dateObj) => {
                 let dObj = new Date(dateObj.fullDate + " " + timeStr);
                 
-                // ★判定用キー (例: 2026/1/10 9:00)
+                // 判定用キー
                 let checkKey = dateObj.fullDate + " " + timeStr;
 
-                // --- NG条件の判定 ---
-                // 1. 定休日（毎週月曜・第三火曜）
+                // NG条件判定
                 let isMonday = (dObj.getDay() === 1);
                 let isThirdTuesday = (dObj.getDay() === 2 && Math.ceil(dObj.getDate() / 7) === 3);
-                
-                // 2. 過去の日時
                 let isPast = (dObj < now);
-
-                // 3. 予約済み（GASから取得したリストに含まれているか）
                 let isBooked = bookedSlots.includes(checkKey);
 
-                // 判定結果で分岐
                 if (isMonday || isThirdTuesday || isPast || isBooked) {
                     row += `<td><span class="symbol-ng">×</span></td>`;
                 } else {
@@ -123,11 +114,11 @@ $(function () {
     // 初回実行
     fetchAndRender();
 
-    // --- 週切り替えボタンの動作 ---
+    // 週切り替えボタン
     $('#prevWeek').on('click', function(e){ 
         e.preventDefault(); 
         currentBaseDate.setDate(currentBaseDate.getDate() - 7); 
-        renderCalendar(currentBaseDate); // 既にデータは持っているので再描画のみ
+        renderCalendar(currentBaseDate); 
     });
     $('#nextWeek').on('click', function(e){ 
         e.preventDefault(); 
@@ -135,19 +126,16 @@ $(function () {
         renderCalendar(currentBaseDate); 
     });
 
-    // --- 日時をクリックした時の動作 ---
+    // 日時選択時の動作
     $(document).on('click', '.time-slot', function() {
-        // 全ての選択状態を解除して、クリックした箇所だけ選択
         $('.selected-slot').removeClass('selected-slot');
         $(this).addClass('selected-slot');
-        
-        // 隠しフィールドに値をセット
         $('#selected_date').val($(this).data('date'));
         $('#selected_time').val($(this).data('time'));
     });
 
     // =================================================================
-    // 3. 送信ボタンを押した時の処理 (POST処理)
+    // 3. 送信ボタンを押した時の処理 (書き込み)
     // =================================================================
     $('form').submit(function (e) {
         e.preventDefault();
@@ -159,48 +147,50 @@ $(function () {
         var names = $('select[name="names"]').val();
         var inquiries = $('textarea[name="inquiries"]').val();
         
-        // バリデーション
         if(!date || !minute) {
             alert("予約日時を選択してください");
             return false;
         }
 
-        // 二重送信防止のためボタンを無効化
+        // ボタンを無効化（二重送信防止）
         var $submitBtn = $('input[type="submit"]');
         $submitBtn.prop('disabled', true).val('送信中...');
 
-        // GASにデータを送信（保存）
-        $.ajax({
-            url: GAS_API_URL,
-            type: 'POST',
-            data: {
-                date: date,    // 予約日
-                time: minute,  // 予約時間
+        // ★ここを fetch に変更（GASのエラー対策）
+        fetch(GAS_API_URL, {
+            method: 'POST',
+            body: new URLSearchParams({
+                date: date,
+                time: minute,
                 name: namelabel,
                 menu: names,
                 inquiry: inquiries
-            },
-            success: function(response) {
-                // 保存成功！LINEにメッセージを送る
-                var msg = `＊＊ご予約内容＊＊\nお名前：\n ${namelabel}\n希望日：\n ${date}\n時間：\n ${minute}\nメニュー：\n ${names}\n問い合わせ内容：\n ${inquiries}`;
-                
-                sendText(msg); // LINE送信関数を呼ぶ
-            },
-            error: function() {
-                alert("予約の保存に失敗しました。通信環境の良い場所で再度お試しください。");
-                $submitBtn.prop('disabled', false).val('送信'); // ボタンを戻す
-            }
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log("保存成功:", data);
+
+            // LINEメッセージ作成
+            var msg = `＊＊ご予約内容＊＊\nお名前：\n ${namelabel}\n希望日：\n ${date}\n時間：\n ${minute}\nメニュー：\n ${names}\n問い合わせ内容：\n ${inquiries}`;
+            
+            sendText(msg); // LINE送信へ
+        })
+        .catch(error => {
+            console.error("保存エラー:", error);
+            alert("予約の保存に失敗しました。通信環境の良い場所で再度お試しください。");
+            $submitBtn.prop('disabled', false).val('送信');
         });
 
         return false;
     });
 
     // =================================================================
-    // LIFF関連の関数 (初期化とメッセージ送信)
+    // LIFF関連
     // =================================================================
     function initializeLiff() {
-        // LIFF IDは自動取得、またはliff.jsの設定に従います
-        liff.init({ liffId: "LIFF_ID_HERE" }) // ※LIFF IDが自動でない場合はここに入れてください
+        // LIFF IDはliff.jsなどで設定されている前提
+        liff.init({ liffId: "LIFF_ID_HERE" }) // 必要に応じてIDを入れる
             .then(() => {
                 if (!liff.isLoggedIn()) {
                     liff.login();
@@ -213,7 +203,7 @@ $(function () {
 
     function sendText(text) {
         if (!liff.isInClient()) {
-            alert('予約完了しました！(LINE外からのアクセスです)');
+            alert('予約完了しました！(LINE外のためメッセージは送信されません)');
             window.location.reload();
             return;
         }
@@ -222,10 +212,9 @@ $(function () {
             'type': 'text',
             'text': text
         }]).then(function () {
-            // 送信完了
-            liff.closeWindow(); // 画面を閉じる
+            liff.closeWindow(); 
         }).catch(function (error) {
-            window.alert('メッセージの送信に失敗しました: ' + error);
+            window.alert('メッセージ送信に失敗: ' + error);
             $('input[type="submit"]').prop('disabled', false).val('送信');
         });
     }
