@@ -1,6 +1,6 @@
 $(function () {
     // =================================================================
-    // ★設定エリア：新しいデプロイURLをここに貼ってください
+    // ★設定エリア：成功した「GASのURL」をここに貼ってください
     // =================================================================
     const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzxZRuvjfmievN-4d4Lack3cl40d3mWegDthbBsg4gn7lnoRy50SdBnLGgqOb3Bde0H/exec';
 
@@ -18,24 +18,26 @@ $(function () {
 
     // --- カレンダー変数 ---
     let currentBaseDate = new Date();
+    // 日曜日から始まるように調整
     currentBaseDate.setDate(currentBaseDate.getDate() - currentBaseDate.getDay());
     const startH = 9;  
     const endH = 17;   
     let bookedSlots = [];
 
-    // --- 読み込み処理（ここはFetchのままでOK、GETは動くため） ---
+    // --- 読み込み処理 ---
     function fetchAndRender() {
         $('#loadingMsg').show();
         fetch(GAS_API_URL)
             .then(response => response.json())
             .then(data => {
+                console.log("予約済みリスト:", data); // 確認用ログ
                 bookedSlots = data;
                 renderCalendar(currentBaseDate);
                 $('#loadingMsg').hide();
             })
             .catch(error => {
                 console.error(error);
-                renderCalendar(currentBaseDate); // エラーでもカレンダーは出す
+                renderCalendar(currentBaseDate); 
                 $('#loadingMsg').hide();
             });
     }
@@ -55,35 +57,52 @@ $(function () {
         let weekDates = [];
         let tempDate = new Date(baseDate);
 
+        // ヘッダー（日付）作成
         for (let i = 0; i < 7; i++) {
             let m = tempDate.getMonth() + 1;
             let d = tempDate.getDate();
             let w = tempDate.getDay();
+            
+            // ★重要：データの照合に使う「シンプルな日付」 (例: 2026/1/10)
             let fullDate = `${tempDate.getFullYear()}/${m}/${d}`; 
+            
+            // 表示用 (例: 2026年01月10日)
             let displayDate = `${tempDate.getFullYear()}年${('0'+m).slice(-2)}月${('0'+d).slice(-2)}日`;
+            
             weekDates.push({ fullDate: fullDate, displayDate: displayDate });
+            
             let color = (w === 0) ? 'text-danger' : (w === 6) ? 'text-primary' : '';
             $header.append(`<th class="${color}">${d}<br><small>(${days[w]})</small></th>`);
             tempDate.setDate(tempDate.getDate() + 1);
         }
 
+        // 時間枠作成
         for (let h = startH; h < endH; h++) {
-            let timeStr = `${h}:00`; 
-            let timeLabel = `${h}：00～`;
-            let row = `<tr><td class="bg-light font-weight-bold">${h}:00</td>`;
+            let timeStr = `${h}:00`;     // ★シンプル時間（判定・保存用）
+            let timeLabel = `${h}：00～`; // 表示用（画面に出す文字）
+            
+            let row = `<tr><td class="bg-light font-weight-bold">${timeStr}</td>`;
             
             weekDates.forEach((dateObj) => {
                 let dObj = new Date(dateObj.fullDate + " " + timeStr);
+                
+                // 判定用キー (例: 2026/1/10 9:00)
                 let checkKey = dateObj.fullDate + " " + timeStr;
+
                 let isMonday = (dObj.getDay() === 1);
                 let isThirdTuesday = (dObj.getDay() === 2 && Math.ceil(dObj.getDate() / 7) === 3);
                 let isPast = (dObj < now);
+                
+                // 予約済み判定
                 let isBooked = bookedSlots.includes(checkKey);
 
                 if (isMonday || isThirdTuesday || isPast || isBooked) {
                     row += `<td><span class="symbol-ng">×</span></td>`;
                 } else {
-                    row += `<td><div class="time-slot" data-date="${dateObj.displayDate}" data-time="${timeLabel}"><span class="symbol-ok">〇</span></div></td>`;
+                    // ★ここを修正しました！ data-date と data-time に「シンプルな値」を入れるように変更
+                    row += `<td><div class="time-slot" data-date="${dateObj.fullDate}" data-time="${timeStr}">
+                                <span class="symbol-ok">〇</span>
+                            </div></td>`;
                 }
             });
             $body.append(row + '</tr>');
@@ -107,25 +126,21 @@ $(function () {
     // =================================================================
     let submitted = false;
 
-    // 送信ボタンが押されたら...
     $('form').submit(function (e) {
         var date = $('#selected_date').val();
         var minute = $('#selected_time').val();
         
         if(!date || !minute) {
             alert("予約日時を選択してください");
-            return false; // 送信中止
+            return false;
         }
         
-        // 必須チェックOKなら、フラグを立ててそのまま送信させる（HTMLに任せる）
         submitted = true;
         $('input[type="submit"]').prop('disabled', true).val('送信中...');
     });
 
-    // 裏方のiframeが「完了」したら動く処理
     $('#hidden_iframe').on('load', function() {
         if(submitted) {
-            // LINE送信用のメッセージ作成
             var namelabel = $('input[name="namelabel"]').val();
             var date = $('#selected_date').val();
             var minute = $('#selected_time').val();
@@ -138,9 +153,8 @@ $(function () {
         }
     });
 
-    // LIFF関連
     function initializeLiff() {
-        liff.init({ liffId: "LIFF_ID_HERE" }) // ※必要ならIDを入れる
+        liff.init({ liffId: "LIFF_ID_HERE" }) 
             .then(() => { if (!liff.isLoggedIn()) { liff.login(); } })
             .catch((err) => { console.log('LIFF Init failed ', err); });
     }
@@ -154,7 +168,6 @@ $(function () {
         liff.sendMessages([{ 'type': 'text', 'text': text }])
             .then(function () { liff.closeWindow(); })
             .catch(function (error) {
-                // LINE送信失敗しても予約自体は完了しているのでリロード
                 alert('予約は完了しましたが、LINEメッセージが送れませんでした。');
                 window.location.reload();
             });
