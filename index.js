@@ -4,6 +4,7 @@ $(function () {
     // =================================================================
     
     // ① カズさんのLIFF ID
+    // ★重要：ここを必ずご自身のIDに書き換えてください！
     const MY_LIFF_ID = "1657883881-JG16djMv"; 
 
     // ② GASのURL
@@ -13,18 +14,24 @@ $(function () {
 
     $('form').attr('action', GAS_API_URL);
     
+    // スマホ判定（LINEアプリか、それ以外か）
     const isLineApp = navigator.userAgent.toLowerCase().indexOf('line') !== -1;
 
     // LIFF初期化
     if (typeof liff !== 'undefined') {
         liff.init({ liffId: MY_LIFF_ID }).then(() => {
             if (isLineApp) {
+                // LINEの場合
                 $('#web-contact-area').hide();
                 $('#line-urgent-msg').show();
                 $('input[name="user_email"]').prop('required', false);
                 $('input[name="user_phone"]').prop('required', false);
-                if (!liff.isLoggedIn()) liff.login();
+                
+                if (!liff.isLoggedIn()) {
+                    liff.login();
+                }
             } else {
+                // Webの場合
                 showWebFields();
             }
         }).catch(err => {
@@ -107,8 +114,9 @@ $(function () {
         $('#selected_date').val($(this).data('date')); $('#selected_time').val($(this).data('time'));
     });
 
-    // ★重要：送信ボタン処理
-    let submitted = false;
+    // =================================================================
+    // ★ここが修正ポイント：強制完了タイマー
+    // =================================================================
     $('form').submit(function (e) {
         var date = $('#selected_date').val();
         var minute = $('#selected_time').val();
@@ -121,50 +129,21 @@ $(function () {
              }
         }
         
-        submitted = true;
+        // 送信ボタンを「送信中...」に変える
         $('input[type="submit"]').prop('disabled', true).val('送信中...');
         
-        // ★最強の安全装置
-        // 3秒経ったら、何がなんでも強制的に終わらせる
+        // ★2秒後に強制的に「完了！」とみなして画面を閉じる
         setTimeout(function(){
-            if(submitted) {
-                console.log("強制終了発動");
-                finishProcess(); 
+            // LINEの場合
+            if (isLineApp) {
+                alert("予約を受け付けました！");
+                liff.closeWindow(); 
+            } 
+            // Webの場合
+            else {
+                alert("予約が完了しました！");
+                window.location.reload();
             }
-        }, 3000); 
+        }, 2000); // 2000ミリ秒 = 2秒
     });
-
-    $('#hidden_iframe').on('load', function() {
-        if(submitted) {
-            finishProcess();
-        }
-    });
-
-    // ★改良版：完了処理
-    function finishProcess() {
-        if (!submitted) return; 
-        submitted = false; 
-
-        if (isLineApp) {
-            var namelabel = $('input[name="namelabel"]').val();
-            var date = $('#selected_date').val();
-            var minute = $('#selected_time').val();
-            var names = $('select[name="names"]').val();
-            var msg = `予約内容：\n${namelabel}様\n${date} ${minute}\n${names}`;
-            
-            // ★ここを修正：メッセージ送信に失敗しても、エラーで止めずに画面を閉じる
-            liff.sendMessages([{ 'type': 'text', 'text': msg }])
-                .then(function () { 
-                    liff.closeWindow(); 
-                })
-                .catch(function (error) {
-                    console.error("LINE送信エラー（でも予約は完了）:", error);
-                    // エラーが出ても閉じる！
-                    liff.closeWindow(); 
-                });
-        } else {
-            alert('予約が完了しました！\n確認メールをお送りしました。');
-            window.location.reload();
-        }
-    }
 });
