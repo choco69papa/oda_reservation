@@ -4,7 +4,7 @@ $(function () {
     // =================================================================
     
     // ① カズさんのLIFF ID
-    // ★重要：ここを必ずご自身のIDに書き換えてください！
+    // ★重要：必ず書き換えてください！
     const MY_LIFF_ID = "1657883881-JG16djMv"; 
 
     // ② GASのURL
@@ -14,7 +14,6 @@ $(function () {
 
     $('form').attr('action', GAS_API_URL);
     
-    // スマホ判定
     const isLineApp = navigator.userAgent.toLowerCase().indexOf('line') !== -1;
 
     // LIFF初期化
@@ -25,10 +24,7 @@ $(function () {
                 $('#line-urgent-msg').show();
                 $('input[name="user_email"]').prop('required', false);
                 $('input[name="user_phone"]').prop('required', false);
-                
-                if (!liff.isLoggedIn()) {
-                    liff.login();
-                }
+                if (!liff.isLoggedIn()) liff.login();
             } else {
                 showWebFields();
             }
@@ -45,7 +41,7 @@ $(function () {
         $('input[name="user_phone"]').prop('required', true);
     }
 
-    // カレンダー処理
+    // カレンダー処理（変更なし）
     $('#form-number').click(function () { $('#form-name').empty(); });
     let currentBaseDate = new Date();
     currentBaseDate.setDate(currentBaseDate.getDate() - currentBaseDate.getDay());
@@ -113,7 +109,7 @@ $(function () {
     });
 
     // =================================================================
-    // ★送信処理（メッセージ送信復活版）
+    // ★送信処理（アラートなし・画面切り替え版）
     // =================================================================
     let submitted = false;
     $('form').submit(function (e) {
@@ -131,55 +127,50 @@ $(function () {
         submitted = true;
         $('input[type="submit"]').prop('disabled', true).val('送信中...');
         
-        // ★安全装置：3秒経っても終わらなければ強制終了
+        // ★2秒後に強制的に「完了画面」へ切り替える
         setTimeout(function(){
             if(submitted) {
                 console.log("タイムアウト：強制完了");
-                finishProcess(true); // true = 強制終了フラグ
+                showSuccessScreen();
             }
-        }, 3000); 
+        }, 2000); 
     });
 
     $('#hidden_iframe').on('load', function() {
         if(submitted) {
-            finishProcess(false);
+            showSuccessScreen();
         }
     });
 
-    // 完了処理
-    function finishProcess(isForce) {
-        if (!submitted) return; // すでに終わってたら無視
+    // ★完了画面への切り替え処理
+    function showSuccessScreen() {
+        if (!submitted) return; 
         submitted = false; 
 
+        // フォームを消して、完了画面を出す
+        $('#booking-form').hide();
+        $('#success-area').show();
+        window.scrollTo(0, 0);
+
         if (isLineApp) {
-            // LINEの場合：メッセージ送信を試みる
+            // LINEメッセージ送信（裏側でこっそりやる）
             var namelabel = $('input[name="namelabel"]').val();
             var date = $('#selected_date').val();
             var minute = $('#selected_time').val();
             var names = $('select[name="names"]').val();
-            var msg = `予約内容：\n${namelabel}様\n${date} ${minute}\n${names}`;
+            var msg = `＊＊ご予約内容＊＊\nお名前：\n${namelabel}\n希望日：\n${date}\n時間：\n${minute}\nメニュー：\n${names}`;
             
-            // もし強制終了(isForce)なら、メッセージはあきらめて閉じる
-            if (isForce) {
-                alert("予約を受け付けました！");
-                liff.closeWindow();
-                return;
-            }
-
-            // 通常終了ならメッセージ送信に挑戦
+            // 送信トライ（失敗してもユーザーには何も言わない）
             liff.sendMessages([{ 'type': 'text', 'text': msg }])
                 .then(function () { 
-                    liff.closeWindow(); 
+                    console.log("LINE送信成功");
+                    // 成功したら、少し待ってから閉じる
+                    setTimeout(function(){ liff.closeWindow(); }, 2000);
                 })
                 .catch(function (error) {
-                    // 失敗しても予約はできているので閉じる
-                    alert("予約は完了しました！");
-                    liff.closeWindow(); 
+                    console.log("LINE送信失敗:", error);
+                    // 失敗しても画面は「完了」のままなのでOK
                 });
-        } else {
-            // Webの場合
-            alert('予約が完了しました！\n確認メールをお送りしました。');
-            window.location.reload();
         }
     }
 });
