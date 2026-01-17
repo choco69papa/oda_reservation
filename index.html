@@ -28,7 +28,7 @@
         .selected-slot { background-color: #007bff !important; color: white !important; }
         .selected-slot .symbol-ok { color: white; }
 
-        /* 必須バッジのスタイル */
+        /* 必須バッジ */
         .badge-required {
             background-color: #dc3545;
             color: white;
@@ -39,9 +39,10 @@
             vertical-align: text-bottom;
         }
         
-        /* スリム化のためのスタイル */
+        /* ★ここを修正：幅を800pxに変更 */
         form {
-            max-width: 500px; /* 最大幅を500pxに制限（PCで広がりすぎない） */
+            max-width: 800px; /* PCでは800pxまで広がる */
+            width: 95%;       /* スマホでは画面の95%を使う */
             margin: 0 auto;   /* 中央寄せ */
             padding: 10px;
         }
@@ -125,6 +126,6 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
     
-    <script src="index.js?v=20260118-slim-design"></script>
+    <script src="index.js?v=20260118-width800"></script>
 </body>
 </html>
