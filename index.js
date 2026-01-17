@@ -7,7 +7,7 @@ $(function () {
     const MY_LIFF_ID = "1657883881-JG16djMv"; 
 
     // ② GASのURL
-    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbw-SLEBc98FyZDM7d4uKSJa6EdTe0Gr1Cj79Z0xbmxuxO4Y0ZSHCo-MTRWW-d3ywCYp/exec';
+    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxW4nf1pUcfG6_xHZWAyVHyoa3R_6UqqqvvN-VTYLPy-nUEKZqk3ffaBYPuTwrl0pXb/exec';
 
     // =================================================================
 
@@ -123,7 +123,7 @@ $(function () {
     });
 
     // =================================================================
-    // ★送信処理（ここで電話番号チェックを行います）
+    // ★送信処理
     // =================================================================
     let submitted = false;
     $('form').submit(function (e) {
@@ -138,12 +138,9 @@ $(function () {
         }
 
         // 2. 電話番号の桁数チェック（Webの場合のみ）
-        // LINEアプリ内ではない(=Web)場合
         if (typeof liff !== 'undefined' && !liff.isInClient()) {
              var phone = $('input[name="user_phone"]').val();
-             // ハイフンを除去して文字数を数える
              var cleanPhone = phone.replace(/-/g, '');
-             // 11桁でなければエラー
              if (cleanPhone.length !== 11) {
                  alert("電話番号はハイフンなしの11桁で入力してください。\n(例: 09012345678)");
                  e.preventDefault();
@@ -182,12 +179,16 @@ $(function () {
                 
                 // LINEアプリ内かどうかチェック
                 if (liff.isInClient()) {
-                    // LINEの場合：ログインしていなければ強制ログイン
+                    // LINEの場合
+                    $('#line-urgent-msg').show(); // お急ぎメッセージを表示
+                    
                     if (!liff.isLoggedIn()) {
                         liff.login();
                     }
                 } else {
-                    // Webの場合：入力欄を表示＆必須化
+                    // Webの場合
+                    // お急ぎメッセージは hidden のまま（表示しない）
+                    
                     $('#web-contact-area').show();
                     $('input[name="user_email"]').prop('required', true);
                     $('input[name="user_phone"]').prop('required', true);
@@ -198,14 +199,12 @@ $(function () {
     }
 
     function sendText(text) {
-        // Webからの場合
         if (!liff.isInClient()) {
             alert('予約が完了しました！\n確認メールをお送りしました。');
             window.location.reload();
             return;
         }
 
-        // LINEからの場合
         if (!liff.isLoggedIn()) {
             liff.login();
             return;
