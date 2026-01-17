@@ -1,9 +1,9 @@
 $(function () {
     // =================================================================
-    // ★設定エリア（ここを必ず書き換えてください！）
+    // ★設定エリア
     // =================================================================
     
-    // ① カズさんのLIFF ID（例：16577xxxxx-xxxxxxx）
+    // ① カズさんのLIFF ID（書き換えてください！）
     const MY_LIFF_ID = "1657883881-JG16djMv"; 
 
     // ② GASのURL
@@ -14,7 +14,7 @@ $(function () {
     // フォーム設定
     $('form').attr('action', GAS_API_URL);
     
-    // LIFFの初期化を開始
+    // LIFFの初期化
     initializeLiff();
 
     // お名前コピー処理
@@ -122,17 +122,35 @@ $(function () {
         $('#selected_time').val($(this).data('time'));
     });
 
-    // 送信処理
+    // =================================================================
+    // ★送信処理（ここで電話番号チェックを行います）
+    // =================================================================
     let submitted = false;
     $('form').submit(function (e) {
         var date = $('#selected_date').val();
         var minute = $('#selected_time').val();
         
+        // 1. 日時のチェック
         if(!date || !minute) {
             alert("予約日時を選択してください");
             e.preventDefault();
             return false;
         }
+
+        // 2. 電話番号の桁数チェック（Webの場合のみ）
+        // LINEアプリ内ではない(=Web)場合
+        if (typeof liff !== 'undefined' && !liff.isInClient()) {
+             var phone = $('input[name="user_phone"]').val();
+             // ハイフンを除去して文字数を数える
+             var cleanPhone = phone.replace(/-/g, '');
+             // 11桁でなければエラー
+             if (cleanPhone.length !== 11) {
+                 alert("電話番号はハイフンなしの11桁で入力してください。\n(例: 09012345678)");
+                 e.preventDefault();
+                 return false;
+             }
+        }
+
         submitted = true;
         $('input[type="submit"]').prop('disabled', true).val('送信中...');
     });
@@ -151,12 +169,11 @@ $(function () {
     });
 
     // =================================================================
-    // ★判定・初期化ロジック（修正版）
+    // ★判定・初期化ロジック
     // =================================================================
     function initializeLiff() {
-        // IDが設定されていない場合のアラート
         if (MY_LIFF_ID === "ここにご自身のLIFF IDを入れてください") {
-            console.error("LIFF IDが設定されていません。コードの先頭を確認してください。");
+            console.error("LIFF IDが設定されていません。");
             return;
         }
 
@@ -165,27 +182,21 @@ $(function () {
                 
                 // LINEアプリ内かどうかチェック
                 if (liff.isInClient()) {
-                    // ★LINEの場合：ログインしていなければ強制ログイン
+                    // LINEの場合：ログインしていなければ強制ログイン
                     if (!liff.isLoggedIn()) {
                         liff.login();
                     }
-                    // Web用の入力欄は隠れたまま
                 } else {
-                    // ★Webの場合：入力欄を表示＆必須化
+                    // Webの場合：入力欄を表示＆必須化
                     $('#web-contact-area').show();
                     $('input[name="user_email"]').prop('required', true);
                     $('input[name="user_phone"]').prop('required', true);
                 }
 
-            }).catch((err)=>{ 
-                console.log("LIFF Initialization failed: ", err);
-            });
+            }).catch((err)=>{ console.log(err); });
         }
     }
 
-    // =================================================================
-    // ★メッセージ送信ロジック（エラー対策済み）
-    // =================================================================
     function sendText(text) {
         // Webからの場合
         if (!liff.isInClient()) {
@@ -195,22 +206,16 @@ $(function () {
         }
 
         // LINEからの場合
-        // もし何らかの理由でログインが外れていたら、ここで再ログインさせる
         if (!liff.isLoggedIn()) {
-            alert("ログイン情報が切れました。再度ログインします。");
             liff.login();
             return;
         }
 
         liff.sendMessages([{ 'type': 'text', 'text': text }])
             .then(function () { 
-                // 送信成功！
                 liff.closeWindow(); 
             })
             .catch(function (error) {
-                // 送信失敗
-                console.error(error);
-                // エラー内容に応じたメッセージ
                 if (error.code === "401" || error.message.includes("access_token")) {
                     alert('認証エラーが発生しました。\n画面を閉じて、もう一度開き直してください。');
                 } else {
