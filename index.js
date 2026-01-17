@@ -2,32 +2,12 @@ $(function () {
     // =================================================================
     // ★設定エリア
     // =================================================================
-    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxWVY5MyHHpeF4Qho8PO6bmOCb3KIUjctsIuA5fUsS0s_iFVmQYhlyx5k1BclLAu9x_dA/exec';
-
-    // =================================================================
-    // ★新機能：LINEかWEBかを判定
-    // =================================================================
-    var userAgent = navigator.userAgent.toLowerCase();
-    var isLine = (userAgent.indexOf('line') !== -1);
-
-    if (isLine) {
-        // --- LINEの場合 ---
-        // 最初からHTMLで hidden になっているので、「何もしない」でOK。
-        // 念のため、必須属性だけ確実にOFFにしておく（見えないのに入力必須だとエラーになるため）
-        $('input[name="user_email"]').prop('required', false);
-        $('input[name="user_phone"]').prop('required', false);
-    } else {
-        // --- WEBの場合 ---
-        // 隠れているエリアを表示(show)させる！
-        $('#web-contact-area').show();
-        
-        // 表示させたので、入力を必須にする
-        $('input[name="user_email"]').prop('required', true);
-        $('input[name="user_phone"]').prop('required', true);
-    }
+    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycby4HvZWI5uOq9-mDpFEWRwJJMYe70ztIX7xcYExoY6pG98HWEwLDS9p1XzxNJS6_jvf/exec';
 
     // フォーム設定
     $('form').attr('action', GAS_API_URL);
+    
+    // LIFFの初期化
     initializeLiff();
 
     // お名前コピー処理
@@ -158,43 +138,49 @@ $(function () {
             var names = $('select[name="names"]').val();
             var inquiries = $('textarea[name="inquiries"]').val();
             
-            // ★電話番号も取得（Webの場合のみ値が入る）
-            var phone = $('input[name="user_phone"]').val(); 
-            
             var msg = `＊＊ご予約内容＊＊\nお名前：\n ${namelabel}\n希望日：\n ${date}\n時間：\n ${minute}\nメニュー：\n ${names}\n問い合わせ内容：\n ${inquiries}`;
             sendText(msg);
         }
     });
 
+    // =================================================================
+    // ★ここが判定ロジック
+    // =================================================================
     function initializeLiff() {
         if(typeof liff !== 'undefined'){
-            // ★重要：LIFF_ID_HEREをご自身のIDに書き換えてください
+            // ★重要：LIFF_ID_HEREをご自身のIDに必ず書き換えてください！
             liff.init({ liffId: "LIFF_ID_HERE" }).then(() => {
-                // 初期化成功
+                
+                // もしLINEアプリ内ではない（Webブラウザ）なら
+                if (!liff.isInClient()) {
+                    // 1. 隠していたエリアを表示する
+                    $('#web-contact-area').show();
+                    
+                    // 2. 表示した項目の「必須」をONにする
+                    $('input[name="user_email"]').prop('required', true);
+                    $('input[name="user_phone"]').prop('required', true);
+                }
+                // LINEの場合は何もしない（hiddenのまま、requiredなし）
+
             }).catch((err)=>{ console.log(err); });
         }
     }
 
     function sendText(text) {
-        var userAgent = navigator.userAgent.toLowerCase();
-        // LINE以外（Web）なら
-        if (userAgent.indexOf('line') === -1) {
+        // LINEアプリ以外（Web）なら
+        if (!liff.isInClient()) {
             alert('予約が完了しました！\n確認メールをお送りしました。');
             window.location.reload();
             return;
         }
 
-        // LINEなら
-        if (liff.isInClient()) {
-             liff.sendMessages([{ 'type': 'text', 'text': text }])
-                .then(function () { liff.closeWindow(); })
-                .catch(function (error) {
-                    alert('予約は完了しましたが、LINE通知に失敗しました。');
-                    window.location.reload();
-                });
-        } else {
-            alert('予約が完了しました！');
-            window.location.reload();
-        }
+        // LINEならメッセージ送信
+        liff.sendMessages([{ 'type': 'text', 'text': text }])
+            .then(function () { liff.closeWindow(); })
+            .catch(function (error) {
+                // ここでエラーが出る場合は、LINE Developersで「chat_message.write」権限を確認してください
+                alert('予約は完了しましたが、LINE通知に失敗しました。\n(開発者設定の権限不足の可能性があります)');
+                window.location.reload();
+            });
     }
 });
