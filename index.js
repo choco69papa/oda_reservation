@@ -144,11 +144,11 @@ $(function () {
     });
 
     // =================================================================
-    // ★ここが判定ロジック
+    // ★判定ロジック
     // =================================================================
     function initializeLiff() {
         if(typeof liff !== 'undefined'){
-            // ★重要：LIFF_ID_HEREをご自身のIDに必ず書き換えてください！
+            // ★重要：LIFF_ID_HEREをご自身のIDに書き換えてください！
             liff.init({ liffId: "LIFF_ID_HERE" }).then(() => {
                 
                 // もしLINEアプリ内ではない（Webブラウザ）なら
@@ -160,7 +160,6 @@ $(function () {
                     $('input[name="user_email"]').prop('required', true);
                     $('input[name="user_phone"]').prop('required', true);
                 }
-                // LINEの場合は何もしない（hiddenのまま、requiredなし）
 
             }).catch((err)=>{ console.log(err); });
         }
@@ -178,8 +177,8 @@ $(function () {
         liff.sendMessages([{ 'type': 'text', 'text': text }])
             .then(function () { liff.closeWindow(); })
             .catch(function (error) {
-                // ここでエラーが出る場合は、LINE Developersで「chat_message.write」権限を確認してください
-                alert('予約は完了しましたが、LINE通知に失敗しました。\n(開発者設定の権限不足の可能性があります)');
+                // エラー内容を詳しく表示するように改良しました
+                alert('LINE通知に失敗しました。\n\n【原因】\n' + error.message + '\n\n【対策】\nLINE設定の「連動アプリ」からこのアプリを一度解除し、再度開いて「許可」してください。');
                 window.location.reload();
             });
     }
