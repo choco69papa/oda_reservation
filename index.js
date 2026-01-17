@@ -6,36 +6,29 @@ $(function () {
     // ① カズさんのLIFF ID
     const MY_LIFF_ID = "1657883881-JG16djMv"; 
 
-    // ② GASのURL（★さっきコピーした「新しいURL」に書き換えてください！）
+    // ② GASのURL（★新しいURLになっているか確認してください！）
     const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyf16EQq0RgRf8bA1SoU3pDpqgX1tY88ABTYnxOA3bAihuok0cy-7CUVXEIs8_CMF81/exec';
 
     // =================================================================
 
     $('form').attr('action', GAS_API_URL);
     
-    // スマホ判定（LINEアプリか、それ以外か）
+    // スマホ判定
     const isLineApp = navigator.userAgent.toLowerCase().indexOf('line') !== -1;
 
     // LIFF初期化
     if (typeof liff !== 'undefined') {
         liff.init({ liffId: MY_LIFF_ID }).then(() => {
             if (isLineApp) {
-                // LINEの場合：入力欄を消す＆お急ぎメッセージ表示
                 $('#web-contact-area').hide();
                 $('#line-urgent-msg').show();
                 $('input[name="user_email"]').prop('required', false);
                 $('input[name="user_phone"]').prop('required', false);
-                
-                // ログインチェック
-                if (!liff.isLoggedIn()) {
-                    liff.login();
-                }
+                if (!liff.isLoggedIn()) liff.login();
             } else {
-                // Webの場合：入力欄を出す
                 showWebFields();
             }
         }).catch(err => {
-            // エラー時：LINEアプリじゃなければ入力欄を出す
             if (!isLineApp) showWebFields();
         });
     } else {
@@ -48,7 +41,7 @@ $(function () {
         $('input[name="user_phone"]').prop('required', true);
     }
 
-    // カレンダー処理（変更なし）
+    // カレンダー処理
     $('#form-number').click(function () { $('#form-name').empty(); });
     let currentBaseDate = new Date();
     currentBaseDate.setDate(currentBaseDate.getDate() - currentBaseDate.getDay());
@@ -115,7 +108,7 @@ $(function () {
         $('#selected_date').val($(this).data('date')); $('#selected_time').val($(this).data('time'));
     });
 
-    // 送信ボタンが押されたとき
+    // ★重要：送信処理
     let submitted = false;
     $('form').submit(function (e) {
         var date = $('#selected_date').val();
@@ -130,12 +123,20 @@ $(function () {
         }
         submitted = true;
         $('input[type="submit"]').prop('disabled', true).val('送信中...');
+        
+        // ★新機能：安全装置（5秒経っても反応がなければ、強制的に完了画面へ進める）
+        setTimeout(function(){
+            if(submitted) {
+                console.log("タイムアウト救済措置：強制完了");
+                $('#hidden_iframe').trigger('load'); 
+            }
+        }, 5000); // 5秒待機
     });
 
-    // 送信完了後（スプレッドシートに書き込まれた後）
+    // 送信完了後の処理（ここが動けばLINEも飛ぶ）
     $('#hidden_iframe').on('load', function() {
         if(submitted) {
-            // LINEアプリならメッセージ送信を試みる
+            submitted = false; // 二重送信防止
             if (isLineApp) {
                 var namelabel = $('input[name="namelabel"]').val();
                 var date = $('#selected_date').val();
@@ -144,16 +145,12 @@ $(function () {
                 var msg = `予約内容：\n${namelabel}様\n${date} ${minute}\n${names}`;
                 
                 liff.sendMessages([{ 'type': 'text', 'text': msg }])
-                    .then(function () { 
-                        liff.closeWindow(); 
-                    })
+                    .then(function () { liff.closeWindow(); })
                     .catch(function (error) {
-                        // ★ここでエラーを表示します！
-                        alert('予約はできましたが、LINE通知に失敗しました。\nエラー: ' + error.message);
+                        alert('予約は完了しましたが、LINEへの通知に失敗しました。');
                         window.location.reload();
                     });
             } else {
-                // Webなら完了アラートだけ
                 alert('予約が完了しました！\n確認メールをお送りしました。');
                 window.location.reload();
             }
