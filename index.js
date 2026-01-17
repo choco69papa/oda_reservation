@@ -1,13 +1,20 @@
 $(function () {
     // =================================================================
-    // ★設定エリア
+    // ★設定エリア（ここを必ず書き換えてください！）
     // =================================================================
+    
+    // ① カズさんのLIFF ID（例：16577xxxxx-xxxxxxx）
+    const MY_LIFF_ID = "1657883881-JG16djMv"; 
+
+    // ② GASのURL
     const GAS_API_URL = 'https://script.google.com/macros/s/AKfycby4HvZWI5uOq9-mDpFEWRwJJMYe70ztIX7xcYExoY6pG98HWEwLDS9p1XzxNJS6_jvf/exec';
+
+    // =================================================================
 
     // フォーム設定
     $('form').attr('action', GAS_API_URL);
     
-    // LIFFの初期化
+    // LIFFの初期化を開始
     initializeLiff();
 
     // お名前コピー処理
@@ -144,42 +151,71 @@ $(function () {
     });
 
     // =================================================================
-    // ★判定ロジック（修正版：ログイン救済措置入り）
+    // ★判定・初期化ロジック（修正版）
     // =================================================================
     function initializeLiff() {
+        // IDが設定されていない場合のアラート
+        if (MY_LIFF_ID === "ここにご自身のLIFF IDを入れてください") {
+            console.error("LIFF IDが設定されていません。コードの先頭を確認してください。");
+            return;
+        }
+
         if(typeof liff !== 'undefined'){
-            // ★重要：LIFF_ID_HEREをご自身のIDに書き換えてください！
-            liff.init({ liffId: "LIFF_ID_HERE" }).then(() => {
+            liff.init({ liffId: MY_LIFF_ID }).then(() => {
                 
-                // 1. Webブラウザの場合（LINEアプリ外）
-                if (!liff.isInClient()) {
+                // LINEアプリ内かどうかチェック
+                if (liff.isInClient()) {
+                    // ★LINEの場合：ログインしていなければ強制ログイン
+                    if (!liff.isLoggedIn()) {
+                        liff.login();
+                    }
+                    // Web用の入力欄は隠れたまま
+                } else {
+                    // ★Webの場合：入力欄を表示＆必須化
                     $('#web-contact-area').show();
                     $('input[name="user_email"]').prop('required', true);
                     $('input[name="user_phone"]').prop('required', true);
-                } 
-                // 2. LINEアプリ内なのに、なぜかログインできていない場合（今回のエラーの原因）
-                else if (!liff.isLoggedIn()) {
-                    liff.login(); // ★ここで強制的にログインさせます！
                 }
 
-            }).catch((err)=>{ console.log(err); });
+            }).catch((err)=>{ 
+                console.log("LIFF Initialization failed: ", err);
+            });
         }
     }
 
+    // =================================================================
+    // ★メッセージ送信ロジック（エラー対策済み）
+    // =================================================================
     function sendText(text) {
-        // LINEアプリ以外（Web）なら
+        // Webからの場合
         if (!liff.isInClient()) {
             alert('予約が完了しました！\n確認メールをお送りしました。');
             window.location.reload();
             return;
         }
 
-        // LINEならメッセージ送信
+        // LINEからの場合
+        // もし何らかの理由でログインが外れていたら、ここで再ログインさせる
+        if (!liff.isLoggedIn()) {
+            alert("ログイン情報が切れました。再度ログインします。");
+            liff.login();
+            return;
+        }
+
         liff.sendMessages([{ 'type': 'text', 'text': text }])
-            .then(function () { liff.closeWindow(); })
+            .then(function () { 
+                // 送信成功！
+                liff.closeWindow(); 
+            })
             .catch(function (error) {
-                // 万が一まだエラーが出る場合は、本当にスマホ側の「連動アプリ」リセットが必要です
-                alert('LINE通知に失敗しました。\n\n【原因】\n' + error.message + '\n\n【対策】\nLINEのホーム画面右上の歯車→「アカウント」→「連動アプリ」からこのアプリを一度解除してください。');
+                // 送信失敗
+                console.error(error);
+                // エラー内容に応じたメッセージ
+                if (error.code === "401" || error.message.includes("access_token")) {
+                    alert('認証エラーが発生しました。\n画面を閉じて、もう一度開き直してください。');
+                } else {
+                    alert('予約は完了しましたが、LINE通知に失敗しました。\n(' + error.message + ')');
+                }
                 window.location.reload();
             });
     }
