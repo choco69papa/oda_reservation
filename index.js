@@ -144,21 +144,22 @@ $(function () {
     });
 
     // =================================================================
-    // ★判定ロジック
+    // ★判定ロジック（修正版：ログイン救済措置入り）
     // =================================================================
     function initializeLiff() {
         if(typeof liff !== 'undefined'){
             // ★重要：LIFF_ID_HEREをご自身のIDに書き換えてください！
             liff.init({ liffId: "LIFF_ID_HERE" }).then(() => {
                 
-                // もしLINEアプリ内ではない（Webブラウザ）なら
+                // 1. Webブラウザの場合（LINEアプリ外）
                 if (!liff.isInClient()) {
-                    // 1. 隠していたエリアを表示する
                     $('#web-contact-area').show();
-                    
-                    // 2. 表示した項目の「必須」をONにする
                     $('input[name="user_email"]').prop('required', true);
                     $('input[name="user_phone"]').prop('required', true);
+                } 
+                // 2. LINEアプリ内なのに、なぜかログインできていない場合（今回のエラーの原因）
+                else if (!liff.isLoggedIn()) {
+                    liff.login(); // ★ここで強制的にログインさせます！
                 }
 
             }).catch((err)=>{ console.log(err); });
@@ -177,8 +178,8 @@ $(function () {
         liff.sendMessages([{ 'type': 'text', 'text': text }])
             .then(function () { liff.closeWindow(); })
             .catch(function (error) {
-                // エラー内容を詳しく表示するように改良しました
-                alert('LINE通知に失敗しました。\n\n【原因】\n' + error.message + '\n\n【対策】\nLINE設定の「連動アプリ」からこのアプリを一度解除し、再度開いて「許可」してください。');
+                // 万が一まだエラーが出る場合は、本当にスマホ側の「連動アプリ」リセットが必要です
+                alert('LINE通知に失敗しました。\n\n【原因】\n' + error.message + '\n\n【対策】\nLINEのホーム画面右上の歯車→「アカウント」→「連動アプリ」からこのアプリを一度解除してください。');
                 window.location.reload();
             });
     }
