@@ -6,14 +6,13 @@ $(function () {
     // ① カズさんのLIFF ID
     const MY_LIFF_ID = "1657883881-JG16djMv"; 
 
-    // ② GASのURL（★新しいURLになっているか確認してください！）
+    // ② GASのURL
     const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyf16EQq0RgRf8bA1SoU3pDpqgX1tY88ABTYnxOA3bAihuok0cy-7CUVXEIs8_CMF81/exec';
 
     // =================================================================
 
     $('form').attr('action', GAS_API_URL);
     
-    // スマホ判定
     const isLineApp = navigator.userAgent.toLowerCase().indexOf('line') !== -1;
 
     // LIFF初期化
@@ -108,14 +107,13 @@ $(function () {
         $('#selected_date').val($(this).data('date')); $('#selected_time').val($(this).data('time'));
     });
 
-    // ★重要：送信ボタンが押されたときの処理
+    // ★重要：送信ボタン処理
     let submitted = false;
     $('form').submit(function (e) {
         var date = $('#selected_date').val();
         var minute = $('#selected_time').val();
         if(!date || !minute) { alert("予約日時を選択してください"); e.preventDefault(); return false; }
 
-        // Webの時だけ電話番号チェック
         if (!isLineApp) {
              var phone = $('input[name="user_phone"]').val();
              if (phone && phone.replace(/-/g, '').length !== 11) {
@@ -126,47 +124,45 @@ $(function () {
         submitted = true;
         $('input[type="submit"]').prop('disabled', true).val('送信中...');
         
-        // ★★★ ここが最強の対策です ★★★
-        // 5秒経っても画面が変わらなければ、強制的に完了処理を実行します
+        // ★最強の安全装置
+        // 3秒経ったら、何がなんでも強制的に終わらせる
         setTimeout(function(){
             if(submitted) {
-                console.log("タイムアウト救済措置：強制完了");
-                finishProcess(); // 強制的に終わらせる！
+                console.log("強制終了発動");
+                finishProcess(); 
             }
-        }, 5000); 
+        }, 3000); 
     });
 
-    // 送信完了時の処理（iframeの読み込み完了 または 5秒タイマーで呼ばれる）
     $('#hidden_iframe').on('load', function() {
         if(submitted) {
             finishProcess();
         }
     });
 
-    // 共通の完了処理関数
+    // ★改良版：完了処理
     function finishProcess() {
-        if (!submitted) return; // すでに終わってたら何もしない
-        submitted = false; // フラグを下ろす
+        if (!submitted) return; 
+        submitted = false; 
 
         if (isLineApp) {
-            // LINEの場合
             var namelabel = $('input[name="namelabel"]').val();
             var date = $('#selected_date').val();
             var minute = $('#selected_time').val();
             var names = $('select[name="names"]').val();
             var msg = `予約内容：\n${namelabel}様\n${date} ${minute}\n${names}`;
             
+            // ★ここを修正：メッセージ送信に失敗しても、エラーで止めずに画面を閉じる
             liff.sendMessages([{ 'type': 'text', 'text': msg }])
                 .then(function () { 
-                    liff.closeWindow(); // 成功したら閉じる
+                    liff.closeWindow(); 
                 })
                 .catch(function (error) {
-                    // 失敗してもアラートを出して閉じる（フリーズさせない）
-                    alert('予約は完了しましたが、LINE通知に失敗しました。');
-                    window.location.reload();
+                    console.error("LINE送信エラー（でも予約は完了）:", error);
+                    // エラーが出ても閉じる！
+                    liff.closeWindow(); 
                 });
         } else {
-            // Webの場合
             alert('予約が完了しました！\n確認メールをお送りしました。');
             window.location.reload();
         }
