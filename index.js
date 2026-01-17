@@ -4,6 +4,15 @@ $(function () {
     // =================================================================
     const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxWVY5MyHHpeF4Qho8PO6bmOCb3KIUjctsIuA5fUsS0s_iFVmQYhlyx5k1BclLAu9x_dA/exec';
 
+    // =================================================================
+    // ★ここが新機能：最強の「メール欄隠し」処理
+    // =================================================================
+    // LIFFの読み込みを待たず、スマホの「ブラウザ情報」を見てLINEなら即隠します
+    var userAgent = navigator.userAgent.toLowerCase();
+    if (userAgent.indexOf('line') !== -1) {
+        $('#email-area').hide(); // LINEなら瞬時に隠す！
+    }
+
     // フォーム設定
     $('form').attr('action', GAS_API_URL);
     initializeLiff();
@@ -72,9 +81,7 @@ $(function () {
             tempDate.setDate(tempDate.getDate() + 1);
         }
 
-        // =================================================================
         // 30分刻みの時間リスト作成 (9:00〜17:30)
-        // =================================================================
         const timeList = [];
         for (let h = 9; h <= 17; h++) {
             timeList.push(h + ":00");
@@ -87,20 +94,17 @@ $(function () {
             
             weekDates.forEach((dateObj) => {
                 let dObj = new Date(dateObj.fullDate + " " + timeStr);
-                let checkKey = dateObj.fullDate + " " + timeStr; // 例: 2026/1/12 9:30
+                let checkKey = dateObj.fullDate + " " + timeStr;
                 
-                // 「日付 + 休」チェック
                 let wholeDayKey = dateObj.fullDate + " 休"; 
                 let isWholeDayOff = bookedSlots.includes(wholeDayKey);
 
-                // 各種判定
                 let isMonday = (dObj.getDay() === 1);
                 let isThirdTuesday = (dObj.getDay() === 2 && Math.ceil(dObj.getDate() / 7) === 3);
                 let isPast = (dObj < now);
                 let isBooked = bookedSlots.includes(checkKey);
 
                 if (isMonday || isThirdTuesday || isPast || isBooked || isWholeDayOff) {
-                    // 「×」も箱(div)に入れて高さを確保
                     row += `<td><div class="time-slot-ng"><span class="symbol-ng">×</span></div></td>`;
                 } else {
                     row += `<td><div class="time-slot" data-date="${dateObj.fullDate}" data-time="${timeStr}">
@@ -148,44 +152,49 @@ $(function () {
             var names = $('select[name="names"]').val();
             var inquiries = $('textarea[name="inquiries"]').val();
             
-            // Webからの予約の場合でも、一応LINE通知を試みる（失敗したらalertが出るようになっている）
-            // ※sendText関数内で分岐しているのでそのままでOK
             var msg = `＊＊ご予約内容＊＊\nお名前：\n ${namelabel}\n希望日：\n ${date}\n時間：\n ${minute}\nメニュー：\n ${names}\n問い合わせ内容：\n ${inquiries}`;
             sendText(msg);
         }
     });
 
     // =================================================================
-    // ★ここを修正（Web対応・メール欄表示切り替え・強制ログイン廃止）
+    // LIFF初期化処理
     // =================================================================
     function initializeLiff() {
         if(typeof liff !== 'undefined'){
-            // ★注意： LIFF_ID_HERE はご自身のID（数字と英字のやつ）に書き換えてください！
+            // ★重要：ここの "LIFF_ID_HERE" は、もし分かれば正しいIDに変えておくと安心です
+            // でも、上の「最強の隠す処理」を入れたので、そのままでも隠れるはずです！
             liff.init({ liffId: "LIFF_ID_HERE" }).then(() => {
-                
-                // LINEアプリ内なら、メール入力欄を隠す
-                if (liff.isInClient()) {
-                    $('#email-area').hide();
-                } else {
-                    // Webなら何もしない（メール欄は表示されたまま、強制ログインもしない）
-                }
-
-            }).catch((err)=>{ console.log(err); });
+                // 初期化成功時の処理（今回は特に何もしなくてOK）
+            }).catch((err)=>{ 
+                // エラーでも気にしない（メール隠しはもう実行済みだから）
+                console.log(err); 
+            });
         }
     }
 
     function sendText(text) {
-        if (!liff.isInClient()) {
-            // Webから開いている時はここを通る
+        // ここでも「LINEアプリかどうか」をチェックして分岐
+        var userAgent = navigator.userAgent.toLowerCase();
+        if (userAgent.indexOf('line') === -1) {
+            // LINEじゃない（Web）なら、アラートを出してリロード
             alert('予約が完了しました！\n確認メールをお送りしました。');
             window.location.reload();
             return;
         }
-        liff.sendMessages([{ 'type': 'text', 'text': text }])
-            .then(function () { liff.closeWindow(); })
-            .catch(function (error) {
-                alert('予約は完了しましたが、LINE通知に失敗しました。');
-                window.location.reload();
-            });
+
+        // LINEならメッセージ送信を試みる
+        if (liff.isInClient()) {
+             liff.sendMessages([{ 'type': 'text', 'text': text }])
+                .then(function () { liff.closeWindow(); })
+                .catch(function (error) {
+                    alert('予約は完了しましたが、LINE通知に失敗しました。');
+                    window.location.reload();
+                });
+        } else {
+            // 万が一ここに来たらWeb扱い
+            alert('予約が完了しました！');
+            window.location.reload();
+        }
     }
 });
