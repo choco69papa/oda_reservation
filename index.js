@@ -6,25 +6,34 @@ $(function () {
     // ① カズさんのLIFF ID
     const MY_LIFF_ID = "1657883881-JG16djMv"; 
 
-    // ② GASのURL（ここはご自身の新しいURLになっているか確認してください！）
+    // ② GASのURL（新しいURLになっているか確認してください！）
     const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwZLcOmYyfRAV6DnC_QViWtgRD5vUYMzrIwovN_4IDEzz6n7AtGk2SHEffKhNw-USc/exec';
 
     // =================================================================
 
     $('form').attr('action', GAS_API_URL);
     
+    // ★新機能：簡易判定（LIFFの読み込みを待たずに、スマホの正体を暴く）
+    // LINEアプリなら true、それ以外（SafariやChrome）なら false
+    const isLineApp = navigator.userAgent.toLowerCase().indexOf('line') !== -1;
+
     // LIFFの初期化を開始
     initializeLiff();
 
-    // ★新機能：救済タイマー
-    // もし1秒たっても画面が切り替わらなかったら、強制的にWeb用の入力欄を表示する
-    setTimeout(function() {
-        // まだどっちも表示されていなかったら
-        if ($('#web-contact-area').css('display') === 'none' && $('#line-urgent-msg').css('display') === 'none') {
-            console.log("読み込みタイムアウト：Webモードで強制表示します");
-            showWebFields();
-        }
-    }, 1000); // 1000ミリ秒 = 1秒後に発動
+    // ★改良版：救済タイマー
+    // 「LINEアプリではない」と確定している場合だけ、タイムアウト処理を行う
+    if (!isLineApp) {
+        setTimeout(function() {
+            // まだWeb用エリアが表示されていなければ、強制的に表示
+            if ($('#web-contact-area').css('display') === 'none') {
+                console.log("読み込みタイムアウト：Webモードで強制表示します");
+                showWebFields();
+            }
+        }, 1000); // 1秒後
+    } else {
+        // LINEアプリの場合は、最初からお急ぎメッセージを出しておく（念のため）
+        $('#line-urgent-msg').show();
+    }
 
     $('#form-number').click(function () { $('#form-name').empty(); });
 
@@ -115,7 +124,7 @@ $(function () {
         var minute = $('#selected_time').val();
         if(!date || !minute) { alert("予約日時を選択してください"); e.preventDefault(); return false; }
 
-        // Webモードで表示されている時だけ電話番号チェックをする
+        // Webモード（表示中）の時だけ電話番号チェック
         if ($('#web-contact-area').css('display') !== 'none') {
              var phone = $('input[name="user_phone"]').val();
              if (phone && phone.replace(/-/g, '').length !== 11) {
@@ -149,6 +158,11 @@ $(function () {
                     if (liff.isInClient()) {
                         // ★LINEの場合
                         $('#line-urgent-msg').show(); 
+                        // LINEなのにWeb欄が出ていたら消す（念のため）
+                        $('#web-contact-area').hide();
+                        $('input[name="user_email"]').prop('required', false);
+                        $('input[name="user_phone"]').prop('required', false);
+
                         if (!liff.isLoggedIn()) liff.login();
                     } else {
                         // ★Webの場合
@@ -156,26 +170,32 @@ $(function () {
                     }
                 })
                 .catch((err) => {
-                    // エラーが出たらWebとみなす
                     console.log("LIFF Init Error:", err);
-                    showWebFields();
+                    // エラーが出た場合、LINEアプリじゃなければWeb欄を出す
+                    if (!isLineApp) {
+                        showWebFields();
+                    }
                 });
         } else {
-            showWebFields();
+            // LIFFがない場合も、LINEアプリじゃなければWeb欄を出す
+            if (!isLineApp) {
+                showWebFields();
+            }
         }
     }
 
-    // Web用の入力欄を表示する関数
     function showWebFields() {
+        // LINEアプリだったら絶対に表示させない！
+        if (isLineApp) return;
+
         $('#web-contact-area').show();
         $('input[name="user_email"]').prop('required', true);
         $('input[name="user_phone"]').prop('required', true);
     }
 
     function sendText(text) {
-        // ★ここも改良：「送信中」で止まらないように、エラーが起きても強制的に完了画面へ
         try {
-            // Webからの場合、またはLIFFが壊れている場合
+            // Webからの場合、またはLIFFが使えない場合
             if (typeof liff === 'undefined' || !liff.isInClient()) {
                 throw new Error("Not in LINE");
             }
@@ -187,13 +207,12 @@ $(function () {
                 .then(function () { liff.closeWindow(); })
                 .catch(function (error) {
                     console.error(error);
-                    // エラーでも予約はできているので完了とする
                     alert('予約は完了しましたが、LINE通知に失敗しました。');
                     window.location.reload();
                 });
 
         } catch (e) {
-            // Webの場合（ここに来るはず）
+            // Webの場合
             alert('予約が完了しました！\n確認メールをお送りしました。');
             window.location.reload();
         }
