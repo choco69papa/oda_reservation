@@ -14,14 +14,13 @@ $(function () {
 
     $('form').attr('action', GAS_API_URL);
     
-    // スマホ判定（LINEアプリか、それ以外か）
+    // スマホ判定
     const isLineApp = navigator.userAgent.toLowerCase().indexOf('line') !== -1;
 
     // LIFF初期化
     if (typeof liff !== 'undefined') {
         liff.init({ liffId: MY_LIFF_ID }).then(() => {
             if (isLineApp) {
-                // LINEの場合
                 $('#web-contact-area').hide();
                 $('#line-urgent-msg').show();
                 $('input[name="user_email"]').prop('required', false);
@@ -31,7 +30,6 @@ $(function () {
                     liff.login();
                 }
             } else {
-                // Webの場合
                 showWebFields();
             }
         }).catch(err => {
@@ -115,8 +113,9 @@ $(function () {
     });
 
     // =================================================================
-    // ★ここが修正ポイント：強制完了タイマー
+    // ★送信処理（メッセージ送信復活版）
     // =================================================================
+    let submitted = false;
     $('form').submit(function (e) {
         var date = $('#selected_date').val();
         var minute = $('#selected_time').val();
@@ -129,21 +128,58 @@ $(function () {
              }
         }
         
-        // 送信ボタンを「送信中...」に変える
+        submitted = true;
         $('input[type="submit"]').prop('disabled', true).val('送信中...');
         
-        // ★2秒後に強制的に「完了！」とみなして画面を閉じる
+        // ★安全装置：3秒経っても終わらなければ強制終了
         setTimeout(function(){
-            // LINEの場合
-            if (isLineApp) {
-                alert("予約を受け付けました！");
-                liff.closeWindow(); 
-            } 
-            // Webの場合
-            else {
-                alert("予約が完了しました！");
-                window.location.reload();
+            if(submitted) {
+                console.log("タイムアウト：強制完了");
+                finishProcess(true); // true = 強制終了フラグ
             }
-        }, 2000); // 2000ミリ秒 = 2秒
+        }, 3000); 
     });
+
+    $('#hidden_iframe').on('load', function() {
+        if(submitted) {
+            finishProcess(false);
+        }
+    });
+
+    // 完了処理
+    function finishProcess(isForce) {
+        if (!submitted) return; // すでに終わってたら無視
+        submitted = false; 
+
+        if (isLineApp) {
+            // LINEの場合：メッセージ送信を試みる
+            var namelabel = $('input[name="namelabel"]').val();
+            var date = $('#selected_date').val();
+            var minute = $('#selected_time').val();
+            var names = $('select[name="names"]').val();
+            var msg = `予約内容：\n${namelabel}様\n${date} ${minute}\n${names}`;
+            
+            // もし強制終了(isForce)なら、メッセージはあきらめて閉じる
+            if (isForce) {
+                alert("予約を受け付けました！");
+                liff.closeWindow();
+                return;
+            }
+
+            // 通常終了ならメッセージ送信に挑戦
+            liff.sendMessages([{ 'type': 'text', 'text': msg }])
+                .then(function () { 
+                    liff.closeWindow(); 
+                })
+                .catch(function (error) {
+                    // 失敗しても予約はできているので閉じる
+                    alert("予約は完了しました！");
+                    liff.closeWindow(); 
+                });
+        } else {
+            // Webの場合
+            alert('予約が完了しました！\n確認メールをお送りしました。');
+            window.location.reload();
+        }
+    }
 });
