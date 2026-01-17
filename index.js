@@ -100,7 +100,7 @@ $(function () {
                 let isBooked = bookedSlots.includes(checkKey);
 
                 if (isMonday || isThirdTuesday || isPast || isBooked || isWholeDayOff) {
-                    // ★ここを修正！「×」も箱(div)に入れて高さを確保
+                    // 「×」も箱(div)に入れて高さを確保
                     row += `<td><div class="time-slot-ng"><span class="symbol-ng">×</span></div></td>`;
                 } else {
                     row += `<td><div class="time-slot" data-date="${dateObj.fullDate}" data-time="${timeStr}">
@@ -147,23 +147,36 @@ $(function () {
             var minute = $('#selected_time').val();
             var names = $('select[name="names"]').val();
             var inquiries = $('textarea[name="inquiries"]').val();
-
+            
+            // Webからの予約の場合でも、一応LINE通知を試みる（失敗したらalertが出るようになっている）
+            // ※sendText関数内で分岐しているのでそのままでOK
             var msg = `＊＊ご予約内容＊＊\nお名前：\n ${namelabel}\n希望日：\n ${date}\n時間：\n ${minute}\nメニュー：\n ${names}\n問い合わせ内容：\n ${inquiries}`;
             sendText(msg);
         }
     });
 
+    // =================================================================
+    // ★ここを修正（Web対応・メール欄表示切り替え）
+    // =================================================================
     function initializeLiff() {
-        if(typeof liff !== 'undefined' && !liff.isLoggedIn()){
+        if(typeof liff !== 'undefined'){
             liff.init({ liffId: "LIFF_ID_HERE" }).then(() => {
-                if (!liff.isLoggedIn()) { liff.login(); }
+                
+                // LINEアプリ内なら、メール入力欄を隠す
+                if (liff.isInClient()) {
+                    $('#email-area').hide();
+                } else {
+                    // Webなら何もしない（メール欄は表示されたまま、強制ログインもしない）
+                }
+
             }).catch((err)=>{ console.log(err); });
         }
     }
 
     function sendText(text) {
         if (!liff.isInClient()) {
-            alert('予約が完了しました！');
+            // Webから開いている時はここを通る
+            alert('予約が完了しました！\n確認メールをお送りしました。');
             window.location.reload();
             return;
         }
