@@ -18,7 +18,7 @@
         .table th, .table td { padding: 10px 0 !important; word-break: break-all; }
         .table-responsive { max-height: 400px; overflow-y: auto; overflow-x: hidden !important; background: white; }
 
-        /* ★ここを修正：〇の箱と×の箱、両方に同じ設定をして高さを揃える */
+        /* 〇の箱と×の箱、両方に同じ設定をして高さを揃える */
         .time-slot, .time-slot-ng { 
             display: block; 
             padding: 0; 
@@ -49,6 +49,13 @@
         <div>
             <input type="text" name="namelabel" class="form-control" required>
         </div>    
+
+        <div id="email-area">
+            <p class="mt-3">メールアドレス<br><small class="text-muted">（予約完了メールをご希望の方は入力してください）</small></p>
+            <div>
+                <input type="email" name="user_email" class="form-control" placeholder="example@gmail.com">
+            </div>
+        </div>
 
         <p class="mt-3">予約日時を選択してください</p>
         <input type="hidden" name="date" id="selected_date" required>
@@ -101,6 +108,6 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
     <script src="liff.js"></script>
-    <script src="index.js?v=20260117-final1"></script>
+    <script src="index.js?v=20260117-web"></script>
 </body>
 </html>
