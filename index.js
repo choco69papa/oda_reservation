@@ -3,18 +3,28 @@ $(function () {
     // ★設定エリア
     // =================================================================
     
-    // ① カズさんのLIFF ID（★ここを必ずご自身のIDに書き換えてください！）
+    // ① カズさんのLIFF ID
     const MY_LIFF_ID = "1657883881-JG16djMv"; 
 
-    // ② GASのURL（前回のままでOKです）
+    // ② GASのURL（ここはご自身の新しいURLになっているか確認してください！）
     const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwZLcOmYyfRAV6DnC_QViWtgRD5vUYMzrIwovN_4IDEzz6n7AtGk2SHEffKhNw-USc/exec';
 
     // =================================================================
 
     $('form').attr('action', GAS_API_URL);
     
-    // LIFFの初期化（判定スタート）
+    // LIFFの初期化を開始
     initializeLiff();
+
+    // ★新機能：救済タイマー
+    // もし1秒たっても画面が切り替わらなかったら、強制的にWeb用の入力欄を表示する
+    setTimeout(function() {
+        // まだどっちも表示されていなかったら
+        if ($('#web-contact-area').css('display') === 'none' && $('#line-urgent-msg').css('display') === 'none') {
+            console.log("読み込みタイムアウト：Webモードで強制表示します");
+            showWebFields();
+        }
+    }, 1000); // 1000ミリ秒 = 1秒後に発動
 
     $('#form-number').click(function () { $('#form-name').empty(); });
 
@@ -105,7 +115,8 @@ $(function () {
         var minute = $('#selected_time').val();
         if(!date || !minute) { alert("予約日時を選択してください"); e.preventDefault(); return false; }
 
-        if (typeof liff !== 'undefined' && !liff.isInClient()) {
+        // Webモードで表示されている時だけ電話番号チェックをする
+        if ($('#web-contact-area').css('display') !== 'none') {
              var phone = $('input[name="user_phone"]').val();
              if (phone && phone.replace(/-/g, '').length !== 11) {
                  alert("電話番号はハイフンなしの11桁で入力してください。"); e.preventDefault(); return false;
@@ -128,16 +139,9 @@ $(function () {
     });
 
     // =================================================================
-    // ★判定・初期化ロジック（改良版）
+    // ★判定・初期化ロジック
     // =================================================================
     function initializeLiff() {
-        // IDが未設定の場合でも、Webフォームを表示させる（救済措置）
-        if (MY_LIFF_ID === "ここにご自身のLIFF IDを入れてください") {
-            console.error("LIFF IDが設定されていませんが、Web用フィールドを表示します。");
-            showWebFields(); 
-            return;
-        }
-
         if(typeof liff !== 'undefined'){
             liff.init({ liffId: MY_LIFF_ID })
                 .then(() => {
@@ -152,17 +156,16 @@ $(function () {
                     }
                 })
                 .catch((err) => {
-                    // ★もしID間違いなどでエラーになっても、Web用の欄は必ず出す！
-                    console.log("LIFF Init Error (Web fallback): ", err);
+                    // エラーが出たらWebとみなす
+                    console.log("LIFF Init Error:", err);
                     showWebFields();
                 });
         } else {
-            // 万が一LIFFが読み込めなくても表示する
             showWebFields();
         }
     }
 
-    // Web用の入力欄を表示する専用の関数
+    // Web用の入力欄を表示する関数
     function showWebFields() {
         $('#web-contact-area').show();
         $('input[name="user_email"]').prop('required', true);
@@ -170,24 +173,29 @@ $(function () {
     }
 
     function sendText(text) {
-        // Webからの場合
-        if (!liff.isInClient()) {
+        // ★ここも改良：「送信中」で止まらないように、エラーが起きても強制的に完了画面へ
+        try {
+            // Webからの場合、またはLIFFが壊れている場合
+            if (typeof liff === 'undefined' || !liff.isInClient()) {
+                throw new Error("Not in LINE");
+            }
+            
+            // LINEからの場合
+            if (!liff.isLoggedIn()) { liff.login(); return; }
+            
+            liff.sendMessages([{ 'type': 'text', 'text': text }])
+                .then(function () { liff.closeWindow(); })
+                .catch(function (error) {
+                    console.error(error);
+                    // エラーでも予約はできているので完了とする
+                    alert('予約は完了しましたが、LINE通知に失敗しました。');
+                    window.location.reload();
+                });
+
+        } catch (e) {
+            // Webの場合（ここに来るはず）
             alert('予約が完了しました！\n確認メールをお送りしました。');
             window.location.reload();
-            return;
         }
-        // LINEからの場合
-        if (!liff.isLoggedIn()) { liff.login(); return; }
-        
-        liff.sendMessages([{ 'type': 'text', 'text': text }])
-            .then(function () { liff.closeWindow(); })
-            .catch(function (error) {
-                if (error.code === "401" || error.message.includes("access_token")) {
-                    alert('認証エラーが発生しました。画面を閉じて再度開いてください。');
-                } else {
-                    alert('予約は完了しましたが、LINE通知に失敗しました。\n(' + error.message + ')');
-                }
-                window.location.reload();
-            });
     }
 });
