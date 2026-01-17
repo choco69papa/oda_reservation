@@ -2,7 +2,7 @@ $(function () {
     // =================================================================
     // ★設定エリア
     // =================================================================
-    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyfhQJ5g-enJbKIcZbmtWKCIPNhRYhFBBoOaQ8W7KLWRLwgVYP5pwZHtKjrMMEXzT6L/exec';
+    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxWVY5MyHHpeF4Qho8PO6bmOCb3KIUjctsIuA5fUsS0s_iFVmQYhlyx5k1BclLAu9x_dA/exec';
 
     // フォーム設定
     $('form').attr('action', GAS_API_URL);
@@ -18,8 +18,6 @@ $(function () {
     let currentBaseDate = new Date();
     currentBaseDate.setDate(currentBaseDate.getDate() - currentBaseDate.getDay()); // 日曜始まり
 
-    const startH = 9;  
-    const endH = 17;   
     let bookedSlots = [];
 
     // --- 読み込み処理 ---
@@ -74,18 +72,25 @@ $(function () {
             tempDate.setDate(tempDate.getDate() + 1);
         }
 
-        // 時間枠作成
-        for (let h = startH; h < endH; h++) {
-            let timeStr = `${h}:00`;      
-            let timeLabel = `${h}：00～`; 
-            let row = `<tr><td class="bg-light font-weight-bold">${h}:00</td>`;
+        // =================================================================
+        // 30分刻みの時間リスト作成 (9:00〜17:30)
+        // =================================================================
+        const timeList = [];
+        for (let h = 9; h <= 17; h++) {
+            timeList.push(h + ":00");
+            timeList.push(h + ":30");
+        }
+
+        // リストを使って行を作る
+        timeList.forEach(timeStr => {
+            let row = `<tr><td class="bg-light font-weight-bold">${timeStr}</td>`;
             
             weekDates.forEach((dateObj) => {
                 let dObj = new Date(dateObj.fullDate + " " + timeStr);
-                let checkKey = dateObj.fullDate + " " + timeStr; // 例: 2026/1/12 9:00
+                let checkKey = dateObj.fullDate + " " + timeStr; // 例: 2026/1/12 9:30
                 
-                // ★ここが新機能！「日付 + 終日」というデータがあるかチェック
-                let wholeDayKey = dateObj.fullDate + " 終日"; 
+                // 「日付 + 休」チェック
+                let wholeDayKey = dateObj.fullDate + " 休"; 
                 let isWholeDayOff = bookedSlots.includes(wholeDayKey);
 
                 // 各種判定
@@ -94,9 +99,9 @@ $(function () {
                 let isPast = (dObj < now);
                 let isBooked = bookedSlots.includes(checkKey);
 
-                // 「終日」データがあれば、時間に関係なく×にする
                 if (isMonday || isThirdTuesday || isPast || isBooked || isWholeDayOff) {
-                    row += `<td><span class="symbol-ng">×</span></td>`;
+                    // ★ここを修正！「×」も箱(div)に入れて高さを確保
+                    row += `<td><div class="time-slot-ng"><span class="symbol-ng">×</span></div></td>`;
                 } else {
                     row += `<td><div class="time-slot" data-date="${dateObj.fullDate}" data-time="${timeStr}">
                                 <span class="symbol-ok">〇</span>
@@ -104,7 +109,7 @@ $(function () {
                 }
             });
             $body.append(row + '</tr>');
-        }
+        });
     }
 
     fetchAndRender();
