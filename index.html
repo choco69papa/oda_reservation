@@ -1,103 +1,252 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>予約フォーム</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .calendar-container { font-size: 11px; padding: 5px 0 !important; }
-        .table { table-layout: fixed; width: 100% !important; margin-bottom: 0 !important; }
-        .table th, .table td { padding: 10px 0 !important; word-break: break-all; }
-        .time-slot { cursor: pointer; }
-        .time-slot-ng { cursor: not-allowed; color: #ccc; }
-        .symbol-ok { color: #28a745; font-weight: bold; font-size: 1.1rem; }
-        .selected-slot { background-color: #007bff !important; color: white !important; }
-        .selected-slot .symbol-ok { color: white; }
-        .badge-required { background-color: #dc3545; color: white; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; margin-left: 5px; vertical-align: text-bottom; }
-        form { max-width: 800px; width: 95%; margin: 0 auto; padding: 10px; }
-        
-        /* ★新しく追加した「完了画面」のデザイン */
-        #success-area {
-            display: none; /* 最初は隠しておく */
-            text-align: center;
-            padding: 50px 20px;
+        body {
+            background-color: #f8f9fa;
+            padding-top: 20px;
+            padding-bottom: 50px;
+            color: #333;
         }
-        .success-icon {
-            font-size: 50px;
+
+        /* 左右に約3mm(12px)の余白 */
+        .container {
+            padding-left: 12px;
+            padding-right: 12px;
+            max-width: 600px;
+        }
+
+        h4 {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 25px;
+        }
+
+        /* カレンダー（表） */
+        .table-responsive {
+            border: none;
+            margin-bottom: 1rem;
+            overflow-x: auto;
+        }
+        .table {
+            table-layout: fixed;
+            width: 100%;
+            background-color: #fff;
+            margin-bottom: 0;
+        }
+        .table th, .table td {
+            text-align: center;
+            vertical-align: middle;
+            padding: 4px 0px !important;
+            font-size: 11px;
+            height: 45px;
+            border: 1px solid #dee2e6;
+        }
+        .table th:first-child, .table td:first-child {
+            width: 45px;
+            background-color: #f1f1f1;
+            font-weight: bold;
+            font-size: 10px;
+        }
+       
+        /* 〇と× */
+        .time-slot, .time-slot-ng {
+            height: 100%;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .time-slot {
+            cursor: pointer;
             color: #28a745;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .time-slot-ng {
+            background-color: #f9f9f9;
+            color: #ccc;
+        }
+        .selected-slot {
+            background-color: #28a745 !important;
+            color: #fff !important;
+        }
+        .text-danger { color: #dc3545 !important; }
+        .text-primary { color: #007bff !important; }
+
+        /* 週移動ボタン */
+        .week-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 0 2px;
+        }
+        .month-label {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        /* 入力フォーム */
+        label {
+            font-weight: bold;
+            font-size: 1rem;
+            margin-top: 15px;
+        }
+        .required-badge {
+            background-color: #dc3545;
+            color: white;
+            font-size: 0.75rem;
+            padding: 3px 6px;
+            border-radius: 4px;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+        .form-control {
+            height: calc(1.5em + 1rem + 2px);
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+        }
+       
+        /* 送信ボタン */
+        .btn-block {
+            padding: 12px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-top: 30px;
+        }
+
+        /* ロード中画面 */
+        #loadingMsg {
+            display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(255,255,255,0.8); z-index:9999;
+            text-align:center; padding-top:200px; font-weight:bold;
+        }
+
+        /* 完了画面のデザイン */
+        .success-icon {
+            font-size: 80px;
+            color: #555;
             margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .success-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .success-msg {
+            font-size: 1rem;
+            line-height: 1.8;
+            margin-bottom: 40px;
+        }
+        .btn-gray {
+            background-color: #6c757d;
+            color: white;
+            padding: 10px 30px;
+            border-radius: 5px;
+            font-size: 1rem;
         }
     </style>
 </head>
 <body>
-    <form id="booking-form" method="POST" target="hidden_iframe">
-        <p id="line-urgent-msg" class="mt-3 text-center" style="color:#ff0000; font-weight:bold; display:none;">
-            お急ぎの方はLINE電話からお願いします
-        </p>
-        <p class="mt-3">予約情報を入力して送信ボタンを押してください。</p>
-        
-        <p class="mt-3">お名前 <span class="badge-required">必須</span></p>
-        <div><input type="text" name="namelabel" class="form-control" placeholder="例：小田 和正" required></div>    
 
-        <div id="web-contact-area" style="display:none;">
-            <p class="mt-3">電話番号 <span class="badge-required">必須</span><br><small class="text-muted">（ハイフンなしの11桁）</small></p>
-            <div><input type="tel" name="user_phone" class="form-control" placeholder="例：09012345678" pattern="\d{11}" title="数字11桁"></div>
-            <p class="mt-3">メールアドレス <span class="badge-required">必須</span><br><small class="text-muted">（完了メールをお送りします）</small></p>
-            <div><input type="email" name="user_email" class="form-control" placeholder="example@gmail.com"></div>
-        </div>
+<div id="loadingMsg">
+    <div class="spinner-border text-primary" role="status"></div>
+    <br>読み込み中...
+</div>
 
-        <p class="mt-3">予約日時を選択してください <span class="badge-required">必須</span></p>
-        <input type="hidden" name="date" id="selected_date" required>
-        <input type="hidden" name="minute" id="selected_time" required>
-
-        <div class="calendar-container border rounded p-2 bg-light">
-            <div id="loadingMsg" class="text-center text-primary my-2" style="display:none;">空き状況を確認中...</div>
-            <div class="d-flex justify-content-between align-items-center mb-2 px-2">
-                <button type="button" id="prevWeek" class="btn btn-sm btn-outline-secondary">＜ 前の週</button>
-                <span id="currentMonthDisplay" style="font-weight:bold;"></span>
-                <button type="button" id="nextWeek" class="btn btn-sm btn-outline-secondary">次の週 ＞</button>
-            </div>
-            <div class="table-responsive">
-                <table class="table table-bordered text-center mb-0">
-                    <thead class="thead-light"><tr id="dateHeader"></tr></thead>
-                    <tbody id="timeBody"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <p class="mt-3">メニュー <span class="badge-required">必須</span></p>
-        <select class="form-control w-100 mt-1" name="names" required>
-            <option value="">メニューを選択</option>
-            <option value="カット">カット</option>
-            <option value="パーマ ＋ カット">パーマ ＋ カット</option>
-            <option value="カラー ＋ カット">カラー ＋ カット</option>
-            <option value="トリートメント">トリートメント</option>
-            <option value="縮毛矯正 ＋ カット">縮毛矯正 ＋ カット</option>
-            <option value="まつ毛カール">まつ毛カール</option>
-            <option value="まつ毛エクステ">まつ毛エクステ</option>
-            <option value="トリートメントストレートパーマ">トリートメントストレートパーマ</option>
-            <option value="着付け">着付け</option>
-        </select>
-        
-        <p class="mt-3">お問い合わせ</p>
-        <div><textarea class="form-control w-100 mt-1" name="inquiries" rows="3"></textarea></div>
-        <br>
-        <span style="color:#ff0000;">注）このフォームから申請いただいた時点では予約は完了していません。</span>
-        <input type="submit" class="mt-4 btn btn-primary w-100" value="送信">
-    </form>
-
-    <div id="success-area">
-        <div class="success-icon">✔</div>
-        <h3>予約を受け付けました</h3>
-        <p class="mt-3">ご予約ありがとうございます。<br>確認後、ご連絡いたします。</p>
-        <button onclick="window.location.reload()" class="btn btn-secondary mt-4">閉じる / 戻る</button>
+<div class="container" id="booking-form">
+   
+    <div class="form-group">
+        <label>お名前<span class="required-badge">必須</span></label>
+        <input type="text" name="namelabel" class="form-control" placeholder="例：BEAUTY SALON ODA" required>
     </div>
 
-    <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
-    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
-    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
-    <script src="index.js?v=20260118-ui-replace"></script>
+    <div style="margin-top: 30px;">
+        <label>予約日時を選択してください<span class="required-badge">必須</span></label>
+       
+        <div class="week-nav">
+            <button id="prevWeek" class="btn btn-outline-secondary">&lt; 前の週</button>
+            <span id="currentMonthDisplay" class="month-label">1月</span>
+            <button id="nextWeek" class="btn btn-primary">次の週 &gt;</button>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead><tr id="dateHeader"></tr></thead>
+                <tbody id="timeBody"></tbody>
+            </table>
+        </div>
+        <div class="text-center text-muted mb-3" style="font-size:0.85rem;">
+            ※「〇」をタップして時間を選択してください
+        </div>
+    </div>
+
+    <form method="post" target="hidden_iframe">
+        <input type="hidden" id="selected_date" name="date">
+        <input type="hidden" id="selected_time" name="minute">
+
+        <div class="form-group">
+            <label>メニュー<span class="required-badge">必須</span></label>
+            <select name="names" class="form-control" required>
+                <option value="" disabled selected>選択してください</option>
+                <option value="カット">カット</option>
+                <option value="パーマ＋カット">パーマ＋カット</option>
+                <option value="カラー＋カット">カラー＋カット</option>
+                <option value="トリートメント">トリートメント</option>
+                <option value="縮毛矯正＋カット">縮毛矯正＋カット</option>
+                <option value="まつ毛カール">まつ毛カール</option>
+                <option value="まつ毛エクステ">まつ毛エクステ</option>
+                <option value="トリートメントストレートパーマ">トリートメントストレートパーマ</option>
+                <option value="着付け">着付け</option>
+            </select>
+        </div>
+       
+        <div class="form-group">
+            <label>お問い合わせ</label>
+            <textarea name="inquiries" class="form-control" rows="3" style="height: auto;" placeholder="ご要望などがあればご記入ください"></textarea>
+        </div>
+
+        <div id="web-contact-area" style="display:none;">
+            <div class="form-group">
+                <label>メールアドレス<span class="required-badge">必須</span></label>
+                <input type="email" name="user_email" class="form-control" placeholder="example@gmail.com">
+            </div>
+            <div class="form-group">
+                <label>電話番号<span class="required-badge">必須</span></label>
+                <input type="tel" name="user_phone" class="form-control" placeholder="09012345678">
+            </div>
+        </div>
+
+        <div id="line-urgent-msg" style="display:none; font-size:0.85rem; color:#666; margin-bottom:15px; margin-top: 10px;">
+            ※ご連絡先はLINEアカウント情報を参照します
+        </div>
+
+        <input type="submit" class="btn btn-success btn-block" value="予約を確定する">
+    </form>
+</div>
+
+<div class="container" id="success-area" style="display:none; text-align:center; padding-top:80px;">
+    <div class="success-icon">✔</div>
+    <div class="success-title">予約を受け付けました</div>
+    <div class="success-msg">
+        ご予約ありがとうございます。<br>
+        確認後、ご連絡いたします。
+    </div>
+    <button onclick="liff.closeWindow();" class="btn btn-gray">閉じる / 戻る</button>
+</div>
+
+<iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
+
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="index.js?v=menu11-restored"></script>
+
 </body>
 </html>
