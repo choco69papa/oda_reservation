@@ -8,7 +8,7 @@ $(function () {
     const MY_LIFF_ID = "1657883881-JG16djMv"; 
 
     // ② GASのURL
-    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzA8kNadh-iMO7z2ZNNRHILRYUUm6wRZqhqvJ4nUdH_AMXetkfswTbvvKk3-MlzPHmmgA/exec';
+    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwFWzJihQDJNLjL8hga7_xiQbAJ6_mqBJZHfx9NX5gMUPGXi6WBMJUNcZMAGJDED3XKBg/exec';
 
     // =================================================================
 
