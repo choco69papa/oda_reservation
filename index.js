@@ -128,11 +128,10 @@ $(function () {
             tempDate.setDate(tempDate.getDate() + 1);
         }
 
-        // 時間枠を作る (9:00 - 17:30)
+// ★修正：時間枠を作る (9:00 - 18:00、1時間おき)
         const timeList = [];
-        for (let h = 9; h <= 17; h++) {
+        for (let h = 9; h <= 18; h++) {
             timeList.push(h + ":00");
-            timeList.push(h + ":30");
         }
 
         timeList.forEach(timeStr => {
