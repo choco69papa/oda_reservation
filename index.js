@@ -9,7 +9,7 @@ $(function () {
 
     // ② GASのURL
     const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwFWzJihQDJNLjL8hga7_xiQbAJ6_mqBJZHfx9NX5gMUPGXi6WBMJUNcZMAGJDED3XKBg/exec';
-
+    
     $('form').attr('action', GAS_API_URL);
     const isLineApp = navigator.userAgent.toLowerCase().indexOf('line') !== -1;
 
@@ -37,7 +37,9 @@ $(function () {
 
     $('#form-number').click(function () { $('#form-name').empty(); });
     
+    // ★カレンダー基準日設定
     let currentBaseDate = new Date();
+    
     let bookedSlots = [];
 
     // ★読み込み処理（キャッシュ対策済み）
@@ -74,7 +76,7 @@ $(function () {
         let dayOfWeek = tempDate.getDay();
         tempDate.setDate(tempDate.getDate() - dayOfWeek); 
 
-        // 月の表示
+        // 月の表示（日曜日の日付を基準に月を表示）
         $('#currentMonthDisplay').text((tempDate.getMonth() + 1) + "月");
 
         // 1週間分の日付データ作成
