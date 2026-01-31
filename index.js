@@ -3,7 +3,7 @@ $(function () {
     // ★設定エリア
     // =================================================================
     const MY_LIFF_ID = "1657883881-JG16djMv"; 
-    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbye7prgbNByzg0dK3Ea7sAUBqZYRlHCIG5u0-HhX9Z-gGDLaHpuVXcdvJcnU2E3uHaVKw/exec';
+    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxqYK7q-A06X2WcDYihliuAziXwH0RICy9R1nD9BSbDEUhgnGMoqpqU3jC4ivcbqaAR4Q/exec';
     // =================================================================
 
     $('form').attr('action', GAS_API_URL);
