@@ -46,7 +46,7 @@
         
         <div class="form-group">
             <label>お名前<span class="required-badge">必須</span></label>
-            <input type="text" name="name" class="form-control" placeholder="例：ビューティー太郎" required>
+            <input type="text" name="name" class="form-control" placeholder="例：ビューティー花子" required>
         </div>
 
         <div class="form-group">
@@ -67,9 +67,9 @@
             <label>予約日時を選択してください<span class="required-badge">必須</span></label>
             
             <div class="week-nav">
-                <button type="button" id="prevWeek" class="btn btn-outline-secondary" onclick="prevWeek()">&lt; 前の週</button>
-                <span id="currentMonthDisplay" class="month-label">1月</span>
-                <button type="button" id="nextWeek" class="btn btn-primary" onclick="nextWeek()">次の週 &gt;</button>
+                <button type="button" id="prevWeekBtn" class="btn btn-outline-secondary" onclick="movePrevWeek()">&lt; 前の週</button>
+                <span id="currentMonthDisplay" class="month-label"></span>
+                <button type="button" id="nextWeekBtn" class="btn btn-primary" onclick="moveNextWeek()">次の週 &gt;</button>
             </div>
 
             <div class="table-responsive">
@@ -113,7 +113,7 @@
     const MY_LIFF_ID = "1657883881-JG16djMv";
 
     let bookedTimesSet = new Set();
-    let currentBaseDate = new Date(); // カレンダーの基準日
+    let currentBaseDate = new Date();
 
     window.onload = function() {
         if(typeof liff !== 'undefined'){
@@ -190,6 +190,7 @@
             let thHtml = `<th class="${thClass}">${d}<br><small>(${days[w]})</small></th>`;
             headerRow.insertAdjacentHTML('beforeend', thHtml);
 
+            // 月の表示を更新（週の真ん中あたりの月を表示）
             if (i === 0) {
                 document.getElementById('currentMonthDisplay').innerText = `${m}月`;
             }
@@ -206,6 +207,7 @@
     function createTimeRow(h, m, weekDates, slots, container) {
         let timeStr = h + ":" + (m === 0 ? "00" : "30");
         let tr = document.createElement('tr');
+        // 時間セル
         tr.innerHTML = `<td style="font-weight:bold; background:#f1f1f1;">${timeStr}</td>`;
 
         for (let i = 0; i < 7; i++) {
@@ -217,14 +219,18 @@
             let now = new Date();
 
             if (info.isHoliday) {
+                // 休
                 td.innerHTML = '<div class="time-slot-ng">休</div>';
             } else if (targetDateTime < now) {
+                // 過去
                 td.innerHTML = '<div class="time-slot-ng">-</div>';
             } else {
                 if (isAvailable(info.dateKey, h, m, slots)) {
+                    // ★カズさんのオリジナルデザイン：緑の〇★
                     td.innerHTML = '<div class="time-slot">〇</div>';
                     td.onclick = function() { selectSlot(this, info.dateKey, timeStr); };
                 } else {
+                    // ★カズさんのオリジナルデザイン：グレーの×★
                     td.innerHTML = '<div class="time-slot-ng">×</div>';
                 }
             }
@@ -256,11 +262,12 @@
         document.getElementById('selected_time').value = time;
     }
 
-    function prevWeek() {
+    // ★重要：関数名を変えて衝突を防ぎました★
+    function movePrevWeek() {
         currentBaseDate.setDate(currentBaseDate.getDate() - 7);
         renderWeekCalendar();
     }
-    function nextWeek() {
+    function moveNextWeek() {
         currentBaseDate.setDate(currentBaseDate.getDate() + 7);
         renderWeekCalendar();
     }
