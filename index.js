@@ -2,14 +2,10 @@ $(function () {
     // =================================================================
     // ★設定エリア
     // =================================================================
-    
-    // ① カズさんのLIFF ID
-    // ★重要：必ず書き換えてください！
     const MY_LIFF_ID = "1657883881-JG16djMv"; 
+    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyMq8roS4Vte7xGjOGa34PyCrjB8ZY9Rnik0xCJGR_lvkV34yZlP6YjPUEuYoVimBNu/exec';
+    // =================================================================
 
-    // ② GASのURL
-    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwFWzJihQDJNLjL8hga7_xiQbAJ6_mqBJZHfx9NX5gMUPGXi6WBMJUNcZMAGJDED3XKBg/exec';
-    
     $('form').attr('action', GAS_API_URL);
     const isLineApp = navigator.userAgent.toLowerCase().indexOf('line') !== -1;
 
