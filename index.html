@@ -6,7 +6,7 @@
     <title>予約フォーム</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        /* ★カズさんの元のCSSそのまま★ */
+        /* ★カズさんのオリジナルデザイン★ */
         body { background-color: #f8f9fa; padding-top: 20px; padding-bottom: 50px; color: #333; }
         .container { padding-left: 12px; padding-right: 12px; max-width: 600px; }
         h4 { text-align: center; font-weight: bold; margin-bottom: 25px; }
@@ -14,11 +14,16 @@
         .table { table-layout: fixed; width: 100%; min-width: 350px; background-color: #fff; margin-bottom: 0; }
         .table th, .table td { text-align: center; vertical-align: middle; padding: 4px 0px !important; font-size: 11px; height: 45px; border: 1px solid #dee2e6; }
         .table th:first-child, .table td:first-child { width: 45px; background-color: #f1f1f1; font-weight: bold; font-size: 10px; }
-        .time-slot, .time-slot-ng { height: 100%; width: 100%; display: flex; align-items: center; justify-content: center; }
+        
+        .time-slot, .time-slot-ng, .time-slot-rest { height: 100%; width: 100%; display: flex; align-items: center; justify-content: center; }
         .time-slot { cursor: pointer; color: #28a745; font-weight: bold; font-size: 16px; }
         .time-slot-ng { background-color: #f9f9f9; color: #ccc; }
+        /* ★休みの日の赤文字スタイル★ */
+        .time-slot-rest { background-color: #fff0f0; color: #dc3545; font-weight: bold; }
+
         .selected-slot { background-color: #28a745 !important; color: #fff !important; }
         .selected-slot .time-slot { color: #fff !important; } 
+        
         .text-danger { color: #dc3545 !important; }
         .text-primary { color: #007bff !important; }
         .week-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 0 2px; }
@@ -27,6 +32,7 @@
         .required-badge { background-color: #dc3545; color: white; font-size: 0.75rem; padding: 3px 6px; border-radius: 4px; margin-left: 8px; vertical-align: middle; }
         .form-control { height: calc(1.5em + 1rem + 2px); padding: 0.5rem 1rem; font-size: 1rem; }
         .btn-block { padding: 12px; font-size: 1.1rem; font-weight: bold; margin-top: 30px; }
+        
         #loadingMsg { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:9999; text-align:center; padding-top:200px; font-weight:bold; }
         .success-icon { font-size: 80px; color: #555; margin-bottom: 20px; font-weight: bold; }
         .success-title { font-size: 1.5rem; font-weight: bold; margin-bottom: 20px; color: #333; }
@@ -46,20 +52,20 @@
         
         <div class="form-group">
             <label>お名前<span class="required-badge">必須</span></label>
-            <input type="text" name="name" class="form-control" placeholder="例：ビューティー花子" required>
+            <input type="text" name="name" class="form-control" placeholder="例：ビューティー太郎" required>
         </div>
 
         <div class="form-group">
             <label>メニュー<span class="required-badge">必須</span></label>
             <select name="menu" id="menuInput" class="form-control" required onchange="renderWeekCalendar()">
                 <option value="" data-slots="0">▼メニューを選択してください</option>
-                <option value="カット" data-slots="2">カット（約60分）</option>
-                <option value="カラー＋カット" data-slots="5">カラー＋カット（約150分）</option>
-                <option value="パーマ＋カット" data-slots="5">パーマ＋カット（約150分）</option>
-                <option value="トリートメント" data-slots="2">トリートメント（約40分）</option>
-                <option value="縮毛矯正＋カット" data-slots="6">縮毛矯正＋カット（約180分）</option>
-                <option value="まつ毛パーマ" data-slots="2">まつ毛パーマ（60分）</option>
-                <option value="まつげエクステ" data-slots="3">まつげエクステ（90分）</option>
+                <option value="カット" data-slots="2">カット</option>
+                <option value="カラー＋カット" data-slots="5">カラー＋カット</option>
+                <option value="パーマ＋カット" data-slots="5">パーマ＋カット</option>
+                <option value="トリートメント" data-slots="2">トリートメント</option>
+                <option value="縮毛矯正＋カット" data-slots="6">縮毛矯正＋カット</option>
+                <option value="まつ毛カール" data-slots="2">まつ毛カール</option>
+                <option value="まつ毛エクステ" data-slots="3">まつ毛エクステ</option>
             </select>
         </div>
 
@@ -67,9 +73,9 @@
             <label>予約日時を選択してください<span class="required-badge">必須</span></label>
             
             <div class="week-nav">
-                <button type="button" id="prevWeekBtn" class="btn btn-outline-secondary" onclick="movePrevWeek()">&lt; 前の週</button>
+                <button type="button" id="prevWeek" class="btn btn-outline-secondary" onclick="movePrevWeek()">&lt; 前の週</button>
                 <span id="currentMonthDisplay" class="month-label"></span>
-                <button type="button" id="nextWeekBtn" class="btn btn-primary" onclick="moveNextWeek()">次の週 &gt;</button>
+                <button type="button" id="nextWeek" class="btn btn-primary" onclick="moveNextWeek()">次の週 &gt;</button>
             </div>
 
             <div class="table-responsive">
@@ -106,10 +112,9 @@
 </div>
 
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-
 <script>
     // ★★★ ここにGASのURL（/execで終わるやつ）を貼ってください ★★★
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycby7T82gguG2KXD37D0Se-JN7ZgzhW2Rp51bpnQggd8bM41im4VHDDZIgPXxxDUSYg45RA/exec";
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycby-6MXh2nvmmNStoRPawfjKfOxWIU5JY65bpoEF3_s-JzzBHV7dl8DdIS7DdF3wObxyzQ/exec";
     const MY_LIFF_ID = "1657883881-JG16djMv";
 
     let bookedTimesSet = new Set();
@@ -132,7 +137,9 @@
                 bookedTimesSet.clear();
                 data.forEach(dt => {
                     let parts = dt.split(' ');
-                    if(parts.length === 2) {
+                    // "2026/1/1 休" のようなデータもここに入ります
+                    if(parts.length >= 2) {
+                        // 日付の0埋め対策（GAS側と統一）
                         let dParts = parts[0].split('/');
                         let normalDate = parseInt(dParts[0]) + '/' + parseInt(dParts[1]) + '/' + parseInt(dParts[2]);
                         bookedTimesSet.add(normalDate + ' ' + parts[1]);
@@ -144,7 +151,6 @@
             .catch(err => {
                 console.error("通信エラー", err);
                 document.getElementById('loadingMsg').style.display = 'none';
-                alert("通信エラーが発生しました");
             });
     }
 
@@ -168,7 +174,6 @@
         const days = ['日', '月', '火', '水', '木', '金', '土'];
         let weekDates = [];
 
-        // ヘッダー作成
         for (let i = 0; i < 7; i++) {
             let m = tempDate.getMonth() + 1;
             let d = tempDate.getDate();
@@ -180,7 +185,7 @@
 
             let dateKey = tempDate.getFullYear() + '/' + m + '/' + d;
             
-            // 定休日（月曜＆第3火曜）
+            // ★定休日ロジック（月曜 ＆ 第3火曜）
             let isHoliday = false;
             if (w === 1) isHoliday = true; 
             if (w === 2 && d >= 15 && d <= 21) isHoliday = true;
@@ -190,14 +195,13 @@
             let thHtml = `<th class="${thClass}">${d}<br><small>(${days[w]})</small></th>`;
             headerRow.insertAdjacentHTML('beforeend', thHtml);
 
-            // 月の表示を更新（週の真ん中あたりの月を表示）
             if (i === 0) {
                 document.getElementById('currentMonthDisplay').innerText = `${m}月`;
             }
             tempDate.setDate(tempDate.getDate() + 1);
         }
 
-        // 時間割作成 (9:00 - 18:00) 30分刻み
+        // 時間枠 (9:00 - 18:00) 30分刻み
         for (let h = 9; h <= 18; h++) {
             createTimeRow(h, 0, weekDates, slots, timeBody);
             createTimeRow(h, 30, weekDates, slots, timeBody);
@@ -207,7 +211,6 @@
     function createTimeRow(h, m, weekDates, slots, container) {
         let timeStr = h + ":" + (m === 0 ? "00" : "30");
         let tr = document.createElement('tr');
-        // 時間セル
         tr.innerHTML = `<td style="font-weight:bold; background:#f1f1f1;">${timeStr}</td>`;
 
         for (let i = 0; i < 7; i++) {
@@ -218,19 +221,22 @@
             targetDateTime.setHours(h, m, 0, 0);
             let now = new Date();
 
-            if (info.isHoliday) {
-                // 休
-                td.innerHTML = '<div class="time-slot-ng">休</div>';
+            // ★休み判定のロジック（ここがバグ修正箇所）
+            // 1. 定休日か？
+            // 2. スプレッドシートに「休」と入っているか？
+            let isSheetHoliday = bookedTimesSet.has(info.dateKey + " 休");
+
+            if (info.isHoliday || isSheetHoliday) {
+                td.innerHTML = '<div class="time-slot-rest">休</div>'; // 赤文字の「休」
             } else if (targetDateTime < now) {
-                // 過去
                 td.innerHTML = '<div class="time-slot-ng">-</div>';
             } else {
                 if (isAvailable(info.dateKey, h, m, slots)) {
-                    // ★カズさんのオリジナルデザイン：緑の〇★
                     td.innerHTML = '<div class="time-slot">〇</div>';
-                    td.onclick = function() { selectSlot(this, info.dateKey, timeStr); };
+                    td.dataset.date = info.dateKey;
+                    td.dataset.time = timeStr;
+                    td.onclick = function() { selectSlot(this); }; // バグ修正：thisを渡す
                 } else {
-                    // ★カズさんのオリジナルデザイン：グレーの×★
                     td.innerHTML = '<div class="time-slot-ng">×</div>';
                 }
             }
@@ -245,7 +251,10 @@
         for (let i = 0; i < neededSlots; i++) {
             let timeStr = currentH + ":" + (currentM === 0 ? "00" : "30");
             let checkKey = dateKey + " " + timeStr;
-            if (bookedTimesSet.has(checkKey)) return false;
+            
+            // すでに予約がある、または「休」設定がある場合
+            if (bookedTimesSet.has(checkKey) || bookedTimesSet.has(dateKey + " 休")) return false;
+            
             if (currentH >= 19) return false;
             currentM += 30;
             if (currentM >= 60) { currentM = 0; currentH++; }
@@ -253,16 +262,15 @@
         return true;
     }
 
-    function selectSlot(td, date, time) {
+    function selectSlot(td) {
         let selected = document.querySelector('.selected-slot');
         if (selected) selected.classList.remove('selected-slot');
         
-        td.parentElement.classList.add('selected-slot');
-        document.getElementById('selected_date').value = date;
-        document.getElementById('selected_time').value = time;
+        td.classList.add('selected-slot');
+        document.getElementById('selected_date').value = td.dataset.date;
+        document.getElementById('selected_time').value = td.dataset.time;
     }
 
-    // ★重要：関数名を変えて衝突を防ぎました★
     function movePrevWeek() {
         currentBaseDate.setDate(currentBaseDate.getDate() - 7);
         renderWeekCalendar();
