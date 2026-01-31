@@ -1,131 +1,257 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>予約フォーム</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body { background-color: #f8f9fa; padding-top: 20px; padding-bottom: 50px; color: #333; }
-        .container { padding-left: 12px; padding-right: 12px; max-width: 600px; }
-        h4 { text-align: center; font-weight: bold; margin-bottom: 25px; }
-        .table-responsive { border: none; margin-bottom: 1rem; overflow-x: auto; }
-        .table { table-layout: fixed; width: 100%; background-color: #fff; margin-bottom: 0; }
-        .table th, .table td { text-align: center; vertical-align: middle; padding: 4px 0px !important; font-size: 11px; height: 45px; border: 1px solid #dee2e6; }
-        .table th:first-child, .table td:first-child { width: 45px; background-color: #f1f1f1; font-weight: bold; font-size: 10px; }
-        .time-slot, .time-slot-ng { height: 100%; width: 100%; display: flex; align-items: center; justify-content: center; }
-        .time-slot { cursor: pointer; color: #28a745; font-weight: bold; font-size: 16px; }
-        .time-slot-ng { background-color: #f9f9f9; color: #ccc; }
-        .selected-slot { background-color: #28a745 !important; color: #fff !important; }
-        .text-danger { color: #dc3545 !important; }
-        .text-primary { color: #007bff !important; }
-        .week-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 0 2px; }
-        .month-label { font-size: 1.2rem; font-weight: bold; }
-        label { font-weight: bold; font-size: 1rem; margin-top: 15px; }
-        .required-badge { background-color: #dc3545; color: white; font-size: 0.75rem; padding: 3px 6px; border-radius: 4px; margin-left: 8px; vertical-align: middle; }
-        .form-control { height: calc(1.5em + 1rem + 2px); padding: 0.5rem 1rem; font-size: 1rem; }
-        .btn-block { padding: 12px; font-size: 1.1rem; font-weight: bold; margin-top: 30px; }
-        #loadingMsg { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:9999; text-align:center; padding-top:200px; font-weight:bold; }
-        .success-icon { font-size: 80px; color: #555; margin-bottom: 20px; font-weight: bold; }
-        .success-title { font-size: 1.5rem; font-weight: bold; margin-bottom: 20px; color: #333; }
-        .success-msg { font-size: 1rem; line-height: 1.8; margin-bottom: 40px; }
-        .btn-gray { background-color: #6c757d; color: white; padding: 10px 30px; border-radius: 5px; font-size: 1rem; }
-    </style>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>ご予約フォーム</title>
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background-color: #f8f9fa; padding: 20px; color: #333; font-family: sans-serif; }
+    .container { max-width: 600px; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+    h4 { text-align: center; font-weight: bold; margin-bottom: 25px; color: #00B900; border-bottom: 2px solid #f1f1f1; padding-bottom: 15px; }
+    label { font-weight: bold; margin-top: 15px; color: #555; }
+    .required-badge { background-color: #dc3545; color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; margin-left: 5px; vertical-align: middle; }
+    .form-control { height: auto; padding: 12px; font-size: 16px; background: #fff; }
+    select.form-control { -webkit-appearance: none; appearance: none; }
+    .btn-block { padding: 15px; font-size: 1.2rem; font-weight: bold; margin-top: 30px; border-radius: 8px; }
+    .loading-msg { display:none; color: #007bff; font-size: 0.9rem; margin-left: 10px; }
+    
+    /* 完了画面用 */
+    #success-area { display:none; text-align:center; padding-top:50px; }
+    .success-icon { font-size: 80px; color: #00B900; margin-bottom: 20px; }
+    .success-title { font-size: 1.5rem; font-weight: bold; margin-bottom: 20px; }
+  </style>
 </head>
 <body>
 
-<div id="loadingMsg">
-    <div class="spinner-border text-primary" role="status"></div>
-    <br>読み込み中...
-</div>
-
-<div class="container" id="booking-form">
+<div class="container" id="booking-area">
+  <h4>WEB予約</h4>
+  <form id="bookingForm">
     
-    <form method="post" target="hidden_iframe">
-        
-        <div class="form-group">
-            <label>お名前<span class="required-badge">必須</span></label>
-            <input type="text" name="namelabel" class="form-control" placeholder="例：ビューティー太郎" required>
-        </div>
-
-        <div style="margin-top: 30px;">
-            <label>予約日時を選択してください<span class="required-badge">必須</span></label>
-            
-            <div class="week-nav">
-                <button type="button" id="prevWeek" class="btn btn-outline-secondary">&lt; 前の週</button>
-                <span id="currentMonthDisplay" class="month-label">1月</span>
-                <button type="button" id="nextWeek" class="btn btn-primary">次の週 &gt;</button>
-            </div>
-
-            <div class="table-responsive">
-                <table class="table table-bordered">
-                    <thead><tr id="dateHeader"></tr></thead>
-                    <tbody id="timeBody"></tbody>
-                </table>
-            </div>
-            <div class="text-center text-muted mb-3" style="font-size:0.85rem;">
-                ※「〇」をタップして時間を選択してください
-            </div>
-        </div>
-
-        <input type="hidden" id="selected_date" name="date">
-        <input type="hidden" id="selected_time" name="minute">
-
-        <div class="form-group">
-            <label>メニュー<span class="required-badge">必須</span></label>
-            <select name="names" class="form-control" required>
-                <option value="" disabled selected>選択してください</option>
-                <option value="カット">カット</option>
-                <option value="パーマ＋カット">パーマ＋カット</option>
-                <option value="カラー＋カット">カラー＋カット</option>
-                <option value="トリートメント">トリートメント</option>
-                <option value="縮毛矯正＋カット">縮毛矯正＋カット</option>
-                <option value="まつ毛カール">まつ毛カール</option>
-                <option value="まつ毛エクステ">まつ毛エクステ</option>
-                <option value="トリートメントストレートパーマ">トリートメントストレートパーマ</option>
-                <option value="着付け">着付け</option>
-            </select>
-        </div>
-        
-        <div class="form-group">
-            <label>お問い合わせ</label>
-            <textarea name="inquiries" class="form-control" rows="3" style="height: auto;" placeholder="ご要望などがあればご記入ください"></textarea>
-        </div>
-
-        <div id="web-contact-area" style="display:none;">
-            <div class="form-group">
-                <label>メールアドレス<span class="required-badge">必須</span></label>
-                <input type="email" name="user_email" class="form-control" placeholder="example@gmail.com">
-            </div>
-            <div class="form-group">
-                <label>電話番号<span class="required-badge">必須</span></label>
-                <input type="tel" name="user_phone" class="form-control" placeholder="09012345678">
-            </div>
-        </div>
-
-        <div id="line-urgent-msg" style="display:none; font-size:0.85rem; color:#666; margin-bottom:15px; margin-top: 10px;">
-            ※ご連絡先はLINEアカウント情報を参照します
-        </div>
-
-        <input type="submit" class="btn btn-success btn-block" value="予約を確定する">
-    </form>
+    <div class="form-group">
+      <label>お名前<span class="required-badge">必須</span></label>
+      <input type="text" name="name" class="form-control" placeholder="例：鈴木 花子" required>
     </div>
 
-<div class="container" id="success-area" style="display:none; text-align:center; padding-top:80px;">
-    <div class="success-icon">✔</div>
-    <div class="success-title">予約を受け付けました</div>
-    <div class="success-msg">
-        ご予約ありがとうございます。<br>
-        確認後、ご連絡いたします。
+    <div class="form-group">
+      <label>メニュー<span class="required-badge">必須</span></label>
+      <select name="menu" id="menuInput" class="form-control" required onchange="updateAvailableTimes()">
+        <option value="" data-slots="0">▼メニューを選択してください</option>
+        <option value="カット" data-slots="2">カット（約60分）</option>
+        <option value="カラー＋カット" data-slots="5">カラー＋カット（約150分）</option>
+        <option value="パーマ＋カット" data-slots="5">パーマ＋カット（約150分）</option>
+        <option value="トリートメント" data-slots="2">トリートメント（約40分）</option>
+        <option value="縮毛矯正＋カット" data-slots="6">縮毛矯正＋カット（約180分）</option>
+        <option value="まつ毛パーマ" data-slots="2">まつ毛パーマ（60分）</option>
+        <option value="まつげエクステ" data-slots="3">まつげエクステ（90分）</option>
+      </select>
+      <small class="text-muted">※メニューに応じて所要時間を確保します</small>
     </div>
-    <button onclick="liff.closeWindow();" class="btn btn-gray">閉じる / 戻る</button>
+
+    <div class="form-group">
+      <label>ご希望日<span class="required-badge">必須</span></label>
+      <input type="date" name="date" id="dateInput" class="form-control" required onchange="updateAvailableTimes()">
+    </div>
+
+    <div class="form-group">
+      <label>開始時間 <span id="loadingMsg" class="loading-msg">空き状況を確認中...</span><span class="required-badge">必須</span></label>
+      <select name="time" id="timeInput" class="form-control" disabled required>
+        <option value="">↑メニューと日付を選ぶと表示されます</option>
+      </select>
+    </div>
+    
+    <div class="form-group">
+      <label>お問い合わせ</label>
+      <textarea name="inquiry" class="form-control" rows="3" placeholder="ご要望などがあればご記入ください"></textarea>
+    </div>
+
+    <button type="button" id="submitBtn" class="btn btn-success btn-block" onclick="submitData()" disabled>予約を確定する</button>
+  </form>
 </div>
 
-<iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
+<div class="container" id="success-area">
+  <div class="success-icon">✔</div>
+  <div class="success-title">予約を受け付けました</div>
+  <p>ご予約ありがとうございます。<br>内容を確認し、LINEにて完了通知をお送りします。</p>
+  <button onclick="closeLiff()" class="btn btn-secondary mt-4">閉じる</button>
+</div>
 
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-<script src="index.js"></script>
+
+<script>
+  // ★カズさんのLIFF IDを設定済み
+  const MY_LIFF_ID = "1657883881-JG16djMv";
+
+  // 予約済みデータを保持
+  let bookedTimesToday = [];
+
+  // LIFF初期化
+  window.onload = function() {
+    if(typeof liff !== 'undefined'){
+      liff.init({ liffId: MY_LIFF_ID })
+        .then(() => {
+          if (!liff.isLoggedIn()) {
+             liff.login();
+          }
+        })
+        .catch(err => {
+           console.log("LIFF init failed", err);
+        });
+    }
+  };
+
+  // 日付かメニューが変わったら実行
+  function updateAvailableTimes() {
+    var dateVal = document.getElementById('dateInput').value;
+    var menuSelect = document.getElementById('menuInput');
+    var selectedOption = menuSelect.options[menuSelect.selectedIndex];
+    var slots = selectedOption ? parseInt(selectedOption.getAttribute('data-slots')) : 0;
+    
+    var timeSelect = document.getElementById('timeInput');
+    var submitBtn = document.getElementById('submitBtn');
+    var loadingMsg = document.getElementById('loadingMsg');
+
+    // まだ選んでない場合
+    if (!dateVal || !slots) {
+      timeSelect.innerHTML = '<option value="">↑メニューと日付を選ぶと表示されます</option>';
+      timeSelect.disabled = true;
+      submitBtn.disabled = true;
+      return;
+    }
+
+    // ロード中表示
+    timeSelect.disabled = true;
+    submitBtn.disabled = true;
+    loadingMsg.style.display = "inline";
+    timeSelect.innerHTML = '<option value="">確認中...</option>';
+
+    var dateStr = dateVal.replace(/-/g, '/');
+
+    // GASに問い合わせ
+    google.script.run
+      .withSuccessHandler(function(bookedList) {
+        bookedTimesToday = bookedList;
+        generateTimeOptions(slots); // 予約枠計算へ
+        loadingMsg.style.display = "none";
+      })
+      .withFailureHandler(function(err) {
+        alert("通信エラーが発生しました: " + err);
+        loadingMsg.style.display = "none";
+      })
+      .getBookedTimeForDate(dateStr);
+  }
+
+  // 時間プルダウン生成
+  function generateTimeOptions(neededSlots) {
+    var timeSelect = document.getElementById('timeInput');
+    var submitBtn = document.getElementById('submitBtn');
+    timeSelect.innerHTML = '<option value="">▼開始時間を選んでください</option>';
+    
+    var startHour = 9; // 9時から
+    var endHour = 19;  // 19時まで
+    var hasOption = false;
+
+    for (var h = startHour; h < endHour; h++) {
+      for (var m = 0; m < 60; m += 30) {
+        var checkTime = h + ":" + (m === 0 ? "00" : "30");
+        
+        // ★ここで「連続して空いているか」を判定
+        if (isAvailable(h, m, neededSlots)) {
+           var opt = document.createElement('option');
+           opt.value = checkTime;
+           opt.text = checkTime;
+           timeSelect.appendChild(opt);
+           hasOption = true;
+        }
+      }
+    }
+
+    if (hasOption) {
+      timeSelect.disabled = false;
+      submitBtn.disabled = false;
+    } else {
+      timeSelect.innerHTML = '<option value="">この日は予約枠が不足しています</option>';
+    }
+  }
+
+  // 空き状況判定ロジック
+  function isAvailable(startH, startM, slots) {
+    var currentH = startH;
+    var currentM = startM;
+
+    for (var i = 0; i < slots; i++) {
+      var timeStr = currentH + ":" + (currentM === 0 ? "00" : "30");
+      
+      // すでに予約が入っていたらNG
+      if (bookedTimesToday.indexOf(timeStr) !== -1) return false;
+      
+      // 19:00を超えるならNG
+      if (currentH >= 19) return false;
+
+      // 30分進める
+      currentM += 30;
+      if (currentM >= 60) {
+        currentM = 0;
+        currentH++;
+      }
+    }
+    return true;
+  }
+
+  // 送信処理
+  function submitData() {
+    var form = document.getElementById('bookingForm');
+    var menuSelect = document.getElementById('menuInput');
+    var slots = menuSelect.options[menuSelect.selectedIndex].getAttribute('data-slots');
+    
+    var data = {
+      date: form.date.value.replace(/-/g, '/'),
+      time: form.time.value,
+      name: form.name.value,
+      menu: form.menu.value,
+      inquiry: form.inquiry.value,
+      slots: slots
+    };
+
+    if(!data.date || !data.time || !data.name || !data.menu){
+      alert("必須項目を入力してください");
+      return;
+    }
+
+    var btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.textContent = "送信中...";
+
+    // GASのお客様用登録関数を呼び出す
+    google.script.run
+      .withSuccessHandler(function(msg) {
+        // 成功画面へ切り替え
+        document.getElementById('booking-area').style.display = 'none';
+        document.getElementById('success-area').style.display = 'block';
+        window.scrollTo(0,0);
+        
+        // LINEメッセージ送信（自分への通知用として送信する場合はここに記述可能）
+        if (liff && liff.isLoggedIn()) {
+           var msgText = "Web予約完了\n" + data.date + " " + data.time + "\n" + data.menu;
+           liff.sendMessages([{ 'type': 'text', 'text': msgText }]).catch(function(e){console.log(e)});
+        }
+      })
+      .withFailureHandler(function(err) {
+        alert("エラーが発生しました: " + err);
+        btn.disabled = false;
+        btn.textContent = "予約を確定する";
+      })
+      .userRegister(data);
+  }
+
+  // LIFFを閉じる処理
+  function closeLiff() {
+    if (liff) {
+      liff.closeWindow();
+    }
+  }
+</script>
 
 </body>
 </html>
