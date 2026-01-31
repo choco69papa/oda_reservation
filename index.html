@@ -3,36 +3,55 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>ご予約フォーム</title>
+  <title>予約カレンダー</title>
   <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    body { background-color: #f8f9fa; padding: 20px; color: #333; font-family: sans-serif; }
-    .container { max-width: 600px; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-    /* 青い帯は出ません！ */
+    body { background-color: #f8f9fa; color: #333; font-family: sans-serif; padding-bottom: 40px; }
+    .container { max-width: 600px; background: white; padding: 20px; margin-top: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+    
+    /* カレンダーのデザイン */
+    .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .calendar-title { font-size: 1.2rem; font-weight: bold; }
+    .calendar-table { width: 100%; table-layout: fixed; border-collapse: collapse; }
+    .calendar-table th { text-align: center; font-size: 0.8rem; color: #666; padding-bottom: 5px; }
+    .calendar-table td { text-align: center; vertical-align: top; height: 50px; border: 1px solid #f0f0f0; cursor: pointer; position: relative; }
+    .day-number { font-size: 1rem; font-weight: bold; display: block; margin-top: 5px; }
+    .calendar-table td:hover { background-color: #f9f9f9; }
+    .calendar-table td.selected { background-color: #00B900; color: white; border-radius: 4px; }
+    .calendar-table td.disabled { color: #ccc; cursor: default; background-color: #fafafa; }
+    .calendar-table td.today { font-weight: bold; color: #00B900; }
+    .calendar-table td.today.selected { color: white; }
+
+    /* 曜日ごとの色 */
+    .th-sun { color: #dc3545 !important; }
+    .th-sat { color: #007bff !important; }
+    .day-sun { color: #dc3545; }
+    .day-sat { color: #007bff; }
+
     label { font-weight: bold; margin-top: 15px; color: #555; }
     .required-badge { background-color: #dc3545; color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; margin-left: 5px; vertical-align: middle; }
-    .form-control { height: auto; padding: 12px; font-size: 16px; background: #fff; }
-    select.form-control { -webkit-appearance: none; appearance: none; }
+    .form-control { -webkit-appearance: none; appearance: none; padding: 12px; font-size: 16px; }
     .btn-block { padding: 15px; font-size: 1.2rem; font-weight: bold; margin-top: 30px; border-radius: 8px; }
-    .loading-msg { display:none; color: #007bff; font-size: 0.9rem; margin-left: 10px; }
+    
+    /* 完了画面 */
     #success-area { display:none; text-align:center; padding-top:50px; }
     .success-icon { font-size: 80px; color: #00B900; margin-bottom: 20px; }
-    .success-title { font-size: 1.5rem; font-weight: bold; margin-bottom: 20px; }
   </style>
 </head>
 <body>
 
 <div class="container" id="booking-area">
   <h4 class="text-center font-weight-bold text-success mb-4 pb-3 border-bottom">WEB予約</h4>
+  
   <form id="bookingForm">
     <div class="form-group">
       <label>お名前<span class="required-badge">必須</span></label>
-      <input type="text" name="name" class="form-control" placeholder="例：鈴木 花子" required>
+      <input type="text" name="name" class="form-control" placeholder="例：ビューティー太郎" required>
     </div>
 
     <div class="form-group">
       <label>メニュー<span class="required-badge">必須</span></label>
-      <select name="menu" id="menuInput" class="form-control" required onchange="updateAvailableTimes()">
+      <select name="menu" id="menuInput" class="form-control" required onchange="onMenuChange()">
         <option value="" data-slots="0">▼メニューを選択してください</option>
         <option value="カット" data-slots="2">カット（約60分）</option>
         <option value="カラー＋カット" data-slots="5">カラー＋カット（約150分）</option>
@@ -47,19 +66,35 @@
 
     <div class="form-group">
       <label>ご希望日<span class="required-badge">必須</span></label>
-      <input type="date" name="date" id="dateInput" class="form-control" required onchange="updateAvailableTimes()">
+      <div id="calendar-wrapper">
+        <div class="calendar-header">
+          <button type="button" class="btn btn-sm btn-outline-secondary" onclick="prevMonth()">&lt; 前月</button>
+          <span class="calendar-title" id="calendarTitle">2026年 1月</span>
+          <button type="button" class="btn btn-sm btn-outline-secondary" onclick="nextMonth()">次月 &gt;</button>
+        </div>
+        <table class="calendar-table">
+          <thead>
+            <tr>
+              <th class="th-sun">日</th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th class="th-sat">土</th>
+            </tr>
+          </thead>
+          <tbody id="calendarBody"></tbody>
+        </table>
+      </div>
+      <input type="hidden" name="date" id="dateInput" required>
     </div>
 
-    <div class="form-group">
-      <label>開始時間 <span id="loadingMsg" class="loading-msg">空き状況を確認中...</span><span class="required-badge">必須</span></label>
-      <select name="time" id="timeInput" class="form-control" disabled required>
-        <option value="">↑メニューと日付を選ぶと表示されます</option>
+    <div class="form-group" id="timeArea" style="display:none;">
+      <label>開始時間<span class="required-badge">必須</span></label>
+      <select name="time" id="timeInput" class="form-control" required>
+        <option value="">↑日付を選ぶと表示されます</option>
       </select>
+      <small id="loadingMsg" class="text-primary" style="display:none;">空き状況を確認中...</small>
     </div>
     
     <div class="form-group">
       <label>お問い合わせ</label>
-      <textarea name="inquiry" class="form-control" rows="3" placeholder="ご要望などがあればご記入ください"></textarea>
+      <textarea name="inquiry" class="form-control" rows="3" placeholder="ご要望など"></textarea>
     </div>
 
     <button type="button" id="submitBtn" class="btn btn-success btn-block" onclick="submitData()" disabled>予約を確定する</button>
@@ -68,67 +103,210 @@
 
 <div class="container" id="success-area">
   <div class="success-icon">✔</div>
-  <div class="success-title">予約を受け付けました</div>
-  <p>ご予約ありがとうございます。<br>内容を確認し、LINEにて完了通知をお送りします。</p>
+  <h4>予約を受け付けました</h4>
+  <p>ご予約ありがとうございます。<br>確認後、LINEにてご連絡いたします。</p>
   <button onclick="closeLiff()" class="btn btn-secondary mt-4">閉じる</button>
 </div>
 
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script>
-  // ★★★ 重要：ここにGASのURL（/execで終わるやつ）を貼る！ ★★★
+  // ★★★ ここにGASのURL（/execで終わるやつ）を貼ってください ★★★
   const GAS_API_URL = "https://script.google.com/macros/s/AKfycby7T82gguG2KXD37D0Se-JN7ZgzhW2Rp51bpnQggd8bM41im4VHDDZIgPXxxDUSYg45RA/exec";
   const MY_LIFF_ID = "1657883881-JG16djMv";
 
-  let bookedTimesToday = [];
+  let bookedTimesAll = []; // 全予約データ
+  let currentYear, currentMonth;
+  let selectedDateStr = "";
 
+  // 初期化
   window.onload = function() {
+    var now = new Date();
+    currentYear = now.getFullYear();
+    currentMonth = now.getMonth() + 1; // 1-12
+    renderCalendar(currentYear, currentMonth);
+
+    // LIFF初期化
     if(typeof liff !== 'undefined'){
       liff.init({ liffId: MY_LIFF_ID }).then(() => {
         if (!liff.isLoggedIn()) liff.login();
       }).catch(err => console.log(err));
     }
+
+    // 最初に予約データを全取得しておく（高速化のため）
+    fetchBookedData();
   };
 
-  function updateAvailableTimes() {
-    var dateVal = document.getElementById('dateInput').value;
-    var menuSelect = document.getElementById('menuInput');
-    var slots = menuSelect.options[menuSelect.selectedIndex].getAttribute('data-slots') || 0;
-    
-    if (!dateVal || slots == 0) return;
-
-    var timeSelect = document.getElementById('timeInput');
-    timeSelect.disabled = true;
-    timeSelect.innerHTML = '<option value="">確認中...</option>';
-    document.getElementById('loadingMsg').style.display = "inline";
-
-    var dateStr = dateVal.replace(/-/g, '/');
-
-    // GitHubからGASへ空き状況を問い合わせる
+  // 予約データを裏で取ってくる
+  function fetchBookedData() {
     fetch(GAS_API_URL + '?p=json')
       .then(res => res.json())
-      .then(bookedList => {
-        // 全予約データから「その日」のものを抽出
-        bookedTimesToday = bookedList.filter(s => s.startsWith(dateStr)).map(s => s.split(' ')[1]);
-        generateTimeOptions(slots);
-        document.getElementById('loadingMsg').style.display = "none";
+      .then(data => {
+        bookedTimesAll = data; // ["2026/02/01 10:00", ...]
+        console.log("予約データ取得完了", bookedTimesAll.length + "件");
       })
-      .catch(err => {
-        alert("通信エラー: " + err);
-        document.getElementById('loadingMsg').style.display = "none";
-      });
+      .catch(err => console.error("通信エラー", err));
   }
 
-  function generateTimeOptions(neededSlots) {
-    var timeSelect = document.getElementById('timeInput');
-    timeSelect.innerHTML = '<option value="">▼開始時間を選んでください</option>';
-    var startHour = 9, endHour = 19;
-    var hasOption = false;
+  // カレンダー描画
+  function renderCalendar(year, month) {
+    document.getElementById('calendarTitle').innerText = year + "年 " + month + "月";
+    const tbody = document.getElementById('calendarBody');
+    tbody.innerHTML = "";
 
-    for (var h = startHour; h < endHour; h++) {
-      for (var m = 0; m < 60; m += 30) {
-        var checkTime = h + ":" + (m === 0 ? "00" : "30");
-        if (isAvailable(h, m, neededSlots)) {
-           var opt = document.createElement('option');
+    const firstDay = new Date(year, month - 1, 1);
+    const lastDay = new Date(year, month, 0);
+    const startDayOfWeek = firstDay.getDay(); // 0:Sun
+    const endDate = lastDay.getDate();
+
+    let dayCount = 1;
+    let row = document.createElement('tr');
+
+    // 空白セル
+    for (let i = 0; i < startDayOfWeek; i++) {
+      row.appendChild(document.createElement('td'));
+    }
+
+    // 日付セル
+    for (let i = startDayOfWeek; i < 7; i++) {
+      if (dayCount > endDate) break;
+      row.appendChild(createDayCell(year, month, dayCount));
+      dayCount++;
+    }
+    tbody.appendChild(row);
+
+    while (dayCount <= endDate) {
+      row = document.createElement('tr');
+      for (let i = 0; i < 7; i++) {
+        if (dayCount > endDate) {
+          row.appendChild(document.createElement('td'));
+        } else {
+          row.appendChild(createDayCell(year, month, dayCount));
+          dayCount++;
+        }
+      }
+      tbody.appendChild(row);
+    }
+  }
+
+  function createDayCell(year, month, day) {
+    const td = document.createElement('td');
+    const dateObj = new Date(year, month - 1, day);
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    
+    // 日付文字列生成 (YYYY/MM/DD)
+    const yyyy = year;
+    const mm = ("0" + month).slice(-2);
+    const dd = ("0" + day).slice(-2);
+    const dateStr = `${yyyy}/${mm}/${dd}`;
+
+    td.innerHTML = `<span class="day-number">${day}</span>`;
+    
+    // 過去の日付は選べない
+    if (dateObj < today) {
+      td.classList.add('disabled');
+    } else {
+      td.onclick = function() { selectDate(this, dateStr); };
+    }
+
+    // 今日の日付強調
+    if (dateObj.getTime() === today.getTime()) {
+      td.classList.add('today');
+    }
+
+    // 曜日色
+    const dayOfWeek = dateObj.getDay();
+    if(dayOfWeek === 0) td.classList.add('day-sun');
+    if(dayOfWeek === 6) td.classList.add('day-sat');
+
+    // 既に選択中なら色付け
+    if (selectedDateStr === dateStr) {
+      td.classList.add('selected');
+    }
+
+    return td;
+  }
+
+  // 月移動
+  function prevMonth() {
+    currentMonth--;
+    if (currentMonth < 1) { currentMonth = 12; currentYear--; }
+    renderCalendar(currentYear, currentMonth);
+  }
+  function nextMonth() {
+    currentMonth++;
+    if (currentMonth > 12) { currentMonth = 1; currentYear++; }
+    renderCalendar(currentYear, currentMonth);
+  }
+
+  // 日付クリック時
+  function selectDate(td, dateStr) {
+    // 選択解除
+    const currentSelected = document.querySelector('.calendar-table td.selected');
+    if (currentSelected) currentSelected.classList.remove('selected');
+    
+    // 選択
+    td.classList.add('selected');
+    selectedDateStr = dateStr;
+    document.getElementById('dateInput').value = dateStr; // hidden inputに入れる
+
+    // 時間計算へ
+    updateAvailableTimes();
+  }
+
+  function onMenuChange() {
+    // メニューが変わったら時間も再計算（日付が選ばれていれば）
+    if(selectedDateStr) updateAvailableTimes();
+  }
+
+  // 時間のプルダウンを作る（ここがスマート予約の心臓部）
+  function updateAvailableTimes() {
+    const menuSelect = document.getElementById('menuInput');
+    const slots = menuSelect.options[menuSelect.selectedIndex].getAttribute('data-slots');
+
+    // メニューか日付が未選択なら終わる
+    if (!selectedDateStr || slots == 0) return;
+
+    // 表示エリアON
+    document.getElementById('timeArea').style.display = 'block';
+    const timeSelect = document.getElementById('timeInput');
+    const loadingMsg = document.getElementById('loadingMsg');
+    const submitBtn = document.getElementById('submitBtn');
+
+    timeSelect.innerHTML = '<option value="">計算中...</option>';
+    timeSelect.disabled = true;
+    submitBtn.disabled = true;
+    loadingMsg.style.display = 'inline';
+
+    // 少し待ってから計算（UIブロック防止）
+    setTimeout(() => {
+      // その日の予約済み時間を抽出
+      const bookedToday = bookedTimesAll
+        .filter(dt => dt.startsWith(selectedDateStr))
+        .map(dt => dt.split(' ')[1]); // 時間部分だけ("10:00")にする
+
+      generateTimeOptions(slots, bookedToday);
+      
+      loadingMsg.style.display = 'none';
+      timeSelect.disabled = false;
+    }, 500);
+  }
+
+  function generateTimeOptions(neededSlots, bookedToday) {
+    const timeSelect = document.getElementById('timeInput');
+    timeSelect.innerHTML = '<option value="">▼開始時間を選んでください</option>';
+    
+    let hasOption = false;
+    const startHour = 9;
+    const endHour = 19;
+
+    for (let h = startHour; h < endHour; h++) {
+      for (let m = 0; m < 60; m += 30) {
+        const checkTime = h + ":" + (m === 0 ? "00" : "30");
+        
+        // 連続空きチェック
+        if (isAvailable(h, m, neededSlots, bookedToday)) {
+           const opt = document.createElement('option');
            opt.value = checkTime;
            opt.text = checkTime;
            timeSelect.appendChild(opt);
@@ -136,33 +314,43 @@
         }
       }
     }
-    if (hasOption) {
-      timeSelect.disabled = false;
-      document.getElementById('submitBtn').disabled = false;
+
+    if (!hasOption) {
+      timeSelect.innerHTML = '<option value="">空き枠がありません</option>';
     } else {
-      timeSelect.innerHTML = '<option value="">空きがありません</option>';
+      document.getElementById('submitBtn').disabled = false;
     }
   }
 
-  function isAvailable(startH, startM, slots) {
-    var currentH = startH, currentM = startM;
-    for (var i = 0; i < slots; i++) {
-      var timeStr = currentH + ":" + (currentM === 0 ? "00" : "30");
-      if (bookedTimesToday.indexOf(timeStr) !== -1) return false;
+  function isAvailable(startH, startM, slots, bookedToday) {
+    let currentH = startH;
+    let currentM = startM;
+
+    for (let i = 0; i < slots; i++) {
+      let timeStr = currentH + ":" + (currentM === 0 ? "00" : "30");
+      
+      // 既に予約があったらNG
+      if (bookedToday.indexOf(timeStr) !== -1) return false;
+      // 19:00超えたらNG
       if (currentH >= 19) return false;
+
       currentM += 30;
-      if (currentM >= 60) { currentM = 0; currentH++; }
+      if (currentM >= 60) {
+        currentM = 0;
+        currentH++;
+      }
     }
     return true;
   }
 
+  // 送信処理（変更なし）
   function submitData() {
     var form = document.getElementById('bookingForm');
     var menuSelect = document.getElementById('menuInput');
     var slots = menuSelect.options[menuSelect.selectedIndex].getAttribute('data-slots');
     
     var data = {
-      date: form.date.value.replace(/-/g, '/'),
+      date: form.date.value, // YYYY/MM/DD
       time: form.time.value,
       name: form.name.value,
       menu: form.menu.value,
@@ -170,16 +358,15 @@
       slots: slots
     };
 
-    if(!data.date || !data.time) return;
+    if(!data.date || !data.time || !data.menu) return;
 
     var btn = document.getElementById('submitBtn');
     btn.disabled = true;
     btn.textContent = "送信中...";
 
-    // GitHubからGASへデータを送信（特例的な書き方）
     fetch(GAS_API_URL, {
       method: 'POST',
-      headers: { "Content-Type": "text/plain" }, // これが重要
+      headers: { "Content-Type": "text/plain" },
       body: JSON.stringify(data)
     })
     .then(res => res.text())
@@ -201,5 +388,6 @@
 
   function closeLiff() { if (liff) liff.closeWindow(); }
 </script>
+
 </body>
 </html>
