@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>ご予約フォーム</title>
@@ -9,15 +8,13 @@
   <style>
     body { background-color: #f8f9fa; padding: 20px; color: #333; font-family: sans-serif; }
     .container { max-width: 600px; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-    h4 { text-align: center; font-weight: bold; margin-bottom: 25px; color: #00B900; border-bottom: 2px solid #f1f1f1; padding-bottom: 15px; }
+    /* 青い帯は出ません！ */
     label { font-weight: bold; margin-top: 15px; color: #555; }
     .required-badge { background-color: #dc3545; color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; margin-left: 5px; vertical-align: middle; }
     .form-control { height: auto; padding: 12px; font-size: 16px; background: #fff; }
     select.form-control { -webkit-appearance: none; appearance: none; }
     .btn-block { padding: 15px; font-size: 1.2rem; font-weight: bold; margin-top: 30px; border-radius: 8px; }
     .loading-msg { display:none; color: #007bff; font-size: 0.9rem; margin-left: 10px; }
-    
-    /* 完了画面用 */
     #success-area { display:none; text-align:center; padding-top:50px; }
     .success-icon { font-size: 80px; color: #00B900; margin-bottom: 20px; }
     .success-title { font-size: 1.5rem; font-weight: bold; margin-bottom: 20px; }
@@ -26,9 +23,8 @@
 <body>
 
 <div class="container" id="booking-area">
-  <h4>WEB予約</h4>
+  <h4 class="text-center font-weight-bold text-success mb-4 pb-3 border-bottom">WEB予約</h4>
   <form id="bookingForm">
-    
     <div class="form-group">
       <label>お名前<span class="required-badge">必須</span></label>
       <input type="text" name="name" class="form-control" placeholder="例：鈴木 花子" required>
@@ -45,8 +41,8 @@
         <option value="縮毛矯正＋カット" data-slots="6">縮毛矯正＋カット（約180分）</option>
         <option value="まつ毛パーマ" data-slots="2">まつ毛パーマ（60分）</option>
         <option value="まつげエクステ" data-slots="3">まつげエクステ（90分）</option>
+        <option value="着付け" data-slots="2">着付け（約60分）</option>
       </select>
-      <small class="text-muted">※メニューに応じて所要時間を確保します</small>
     </div>
 
     <div class="form-group">
@@ -78,85 +74,59 @@
 </div>
 
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-
 <script>
-  // ★カズさんのLIFF IDを設定済み
+  // ★★★ 重要：ここにGASのURL（/execで終わるやつ）を貼る！ ★★★
+  const GAS_API_URL = "ここにGASのURLを貼り付けてください";
   const MY_LIFF_ID = "1657883881-JG16djMv";
 
-  // 予約済みデータを保持
   let bookedTimesToday = [];
 
-  // LIFF初期化
   window.onload = function() {
     if(typeof liff !== 'undefined'){
-      liff.init({ liffId: MY_LIFF_ID })
-        .then(() => {
-          if (!liff.isLoggedIn()) {
-             liff.login();
-          }
-        })
-        .catch(err => {
-           console.log("LIFF init failed", err);
-        });
+      liff.init({ liffId: MY_LIFF_ID }).then(() => {
+        if (!liff.isLoggedIn()) liff.login();
+      }).catch(err => console.log(err));
     }
   };
 
-  // 日付かメニューが変わったら実行
   function updateAvailableTimes() {
     var dateVal = document.getElementById('dateInput').value;
     var menuSelect = document.getElementById('menuInput');
-    var selectedOption = menuSelect.options[menuSelect.selectedIndex];
-    var slots = selectedOption ? parseInt(selectedOption.getAttribute('data-slots')) : 0;
+    var slots = menuSelect.options[menuSelect.selectedIndex].getAttribute('data-slots') || 0;
     
+    if (!dateVal || slots == 0) return;
+
     var timeSelect = document.getElementById('timeInput');
-    var submitBtn = document.getElementById('submitBtn');
-    var loadingMsg = document.getElementById('loadingMsg');
-
-    // まだ選んでない場合
-    if (!dateVal || !slots) {
-      timeSelect.innerHTML = '<option value="">↑メニューと日付を選ぶと表示されます</option>';
-      timeSelect.disabled = true;
-      submitBtn.disabled = true;
-      return;
-    }
-
-    // ロード中表示
     timeSelect.disabled = true;
-    submitBtn.disabled = true;
-    loadingMsg.style.display = "inline";
     timeSelect.innerHTML = '<option value="">確認中...</option>';
+    document.getElementById('loadingMsg').style.display = "inline";
 
     var dateStr = dateVal.replace(/-/g, '/');
 
-    // GASに問い合わせ
-    google.script.run
-      .withSuccessHandler(function(bookedList) {
-        bookedTimesToday = bookedList;
-        generateTimeOptions(slots); // 予約枠計算へ
-        loadingMsg.style.display = "none";
+    // GitHubからGASへ空き状況を問い合わせる
+    fetch(GAS_API_URL + '?p=json')
+      .then(res => res.json())
+      .then(bookedList => {
+        // 全予約データから「その日」のものを抽出
+        bookedTimesToday = bookedList.filter(s => s.startsWith(dateStr)).map(s => s.split(' ')[1]);
+        generateTimeOptions(slots);
+        document.getElementById('loadingMsg').style.display = "none";
       })
-      .withFailureHandler(function(err) {
-        alert("通信エラーが発生しました: " + err);
-        loadingMsg.style.display = "none";
-      })
-      .getBookedTimeForDate(dateStr);
+      .catch(err => {
+        alert("通信エラー: " + err);
+        document.getElementById('loadingMsg').style.display = "none";
+      });
   }
 
-  // 時間プルダウン生成
   function generateTimeOptions(neededSlots) {
     var timeSelect = document.getElementById('timeInput');
-    var submitBtn = document.getElementById('submitBtn');
     timeSelect.innerHTML = '<option value="">▼開始時間を選んでください</option>';
-    
-    var startHour = 9; // 9時から
-    var endHour = 19;  // 19時まで
+    var startHour = 9, endHour = 19;
     var hasOption = false;
 
     for (var h = startHour; h < endHour; h++) {
       for (var m = 0; m < 60; m += 30) {
         var checkTime = h + ":" + (m === 0 ? "00" : "30");
-        
-        // ★ここで「連続して空いているか」を判定
         if (isAvailable(h, m, neededSlots)) {
            var opt = document.createElement('option');
            opt.value = checkTime;
@@ -166,40 +136,26 @@
         }
       }
     }
-
     if (hasOption) {
       timeSelect.disabled = false;
-      submitBtn.disabled = false;
+      document.getElementById('submitBtn').disabled = false;
     } else {
-      timeSelect.innerHTML = '<option value="">この日は予約枠が不足しています</option>';
+      timeSelect.innerHTML = '<option value="">空きがありません</option>';
     }
   }
 
-  // 空き状況判定ロジック
   function isAvailable(startH, startM, slots) {
-    var currentH = startH;
-    var currentM = startM;
-
+    var currentH = startH, currentM = startM;
     for (var i = 0; i < slots; i++) {
       var timeStr = currentH + ":" + (currentM === 0 ? "00" : "30");
-      
-      // すでに予約が入っていたらNG
       if (bookedTimesToday.indexOf(timeStr) !== -1) return false;
-      
-      // 19:00を超えるならNG
       if (currentH >= 19) return false;
-
-      // 30分進める
       currentM += 30;
-      if (currentM >= 60) {
-        currentM = 0;
-        currentH++;
-      }
+      if (currentM >= 60) { currentM = 0; currentH++; }
     }
     return true;
   }
 
-  // 送信処理
   function submitData() {
     var form = document.getElementById('bookingForm');
     var menuSelect = document.getElementById('menuInput');
@@ -214,44 +170,36 @@
       slots: slots
     };
 
-    if(!data.date || !data.time || !data.name || !data.menu){
-      alert("必須項目を入力してください");
-      return;
-    }
+    if(!data.date || !data.time) return;
 
     var btn = document.getElementById('submitBtn');
     btn.disabled = true;
     btn.textContent = "送信中...";
 
-    // GASのお客様用登録関数を呼び出す
-    google.script.run
-      .withSuccessHandler(function(msg) {
-        // 成功画面へ切り替え
-        document.getElementById('booking-area').style.display = 'none';
-        document.getElementById('success-area').style.display = 'block';
-        window.scrollTo(0,0);
-        
-        // LINEメッセージ送信（自分への通知用として送信する場合はここに記述可能）
-        if (liff && liff.isLoggedIn()) {
-           var msgText = "Web予約完了\n" + data.date + " " + data.time + "\n" + data.menu;
-           liff.sendMessages([{ 'type': 'text', 'text': msgText }]).catch(function(e){console.log(e)});
-        }
-      })
-      .withFailureHandler(function(err) {
-        alert("エラーが発生しました: " + err);
-        btn.disabled = false;
-        btn.textContent = "予約を確定する";
-      })
-      .userRegister(data);
+    // GitHubからGASへデータを送信（特例的な書き方）
+    fetch(GAS_API_URL, {
+      method: 'POST',
+      headers: { "Content-Type": "text/plain" }, // これが重要
+      body: JSON.stringify(data)
+    })
+    .then(res => res.text())
+    .then(msg => {
+      document.getElementById('booking-area').style.display = 'none';
+      document.getElementById('success-area').style.display = 'block';
+      window.scrollTo(0,0);
+      if (liff && liff.isLoggedIn()) {
+         var msgText = "Web予約完了\n" + data.date + " " + data.time + "\n" + data.menu;
+         liff.sendMessages([{ 'type': 'text', 'text': msgText }]).catch(e => console.log(e));
+      }
+    })
+    .catch(err => {
+      alert("送信エラー: " + err);
+      btn.disabled = false;
+      btn.textContent = "予約を確定する";
+    });
   }
 
-  // LIFFを閉じる処理
-  function closeLiff() {
-    if (liff) {
-      liff.closeWindow();
-    }
-  }
+  function closeLiff() { if (liff) liff.closeWindow(); }
 </script>
-
 </body>
 </html>
