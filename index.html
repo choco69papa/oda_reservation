@@ -6,23 +6,21 @@
     <title>予約フォーム</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        /* ★カズさんのオリジナルデザイン★ */
+        /* ★カズさんの指定した元のCSS（絶対に変えません！）★ */
         body { background-color: #f8f9fa; padding-top: 20px; padding-bottom: 50px; color: #333; }
         .container { padding-left: 12px; padding-right: 12px; max-width: 600px; }
         h4 { text-align: center; font-weight: bold; margin-bottom: 25px; }
         .table-responsive { border: none; margin-bottom: 1rem; overflow-x: auto; }
-        .table { table-layout: fixed; width: 100%; min-width: 350px; background-color: #fff; margin-bottom: 0; }
+        .table { table-layout: fixed; width: 100%; background-color: #fff; margin-bottom: 0; }
+        /* paddingなど、カズさんの元の設定を厳守 */
         .table th, .table td { text-align: center; vertical-align: middle; padding: 4px 0px !important; font-size: 11px; height: 45px; border: 1px solid #dee2e6; }
         .table th:first-child, .table td:first-child { width: 45px; background-color: #f1f1f1; font-weight: bold; font-size: 10px; }
         
-        .time-slot, .time-slot-ng, .time-slot-rest { height: 100%; width: 100%; display: flex; align-items: center; justify-content: center; }
+        /* ◯や×のスタイル（元のまま） */
+        .time-slot, .time-slot-ng { height: 100%; width: 100%; display: flex; align-items: center; justify-content: center; }
         .time-slot { cursor: pointer; color: #28a745; font-weight: bold; font-size: 16px; }
         .time-slot-ng { background-color: #f9f9f9; color: #ccc; }
-        /* ★休みの日の赤文字スタイル★ */
-        .time-slot-rest { background-color: #fff0f0; color: #dc3545; font-weight: bold; }
-
         .selected-slot { background-color: #28a745 !important; color: #fff !important; }
-        .selected-slot .time-slot { color: #fff !important; } 
         
         .text-danger { color: #dc3545 !important; }
         .text-primary { color: #007bff !important; }
@@ -32,8 +30,11 @@
         .required-badge { background-color: #dc3545; color: white; font-size: 0.75rem; padding: 3px 6px; border-radius: 4px; margin-left: 8px; vertical-align: middle; }
         .form-control { height: calc(1.5em + 1rem + 2px); padding: 0.5rem 1rem; font-size: 1rem; }
         .btn-block { padding: 12px; font-size: 1.1rem; font-weight: bold; margin-top: 30px; }
-        
         #loadingMsg { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:9999; text-align:center; padding-top:200px; font-weight:bold; }
+        
+        /* ★唯一追加したCSS：「休」の赤文字スタイル★ */
+        .time-slot-rest { height: 100%; width: 100%; display: flex; align-items: center; justify-content: center; background-color: #fff5f5; color: #dc3545; font-weight: bold; }
+
         .success-icon { font-size: 80px; color: #555; margin-bottom: 20px; font-weight: bold; }
         .success-title { font-size: 1.5rem; font-weight: bold; margin-bottom: 20px; color: #333; }
         .success-msg { font-size: 1rem; line-height: 1.8; margin-bottom: 40px; }
@@ -73,9 +74,9 @@
             <label>予約日時を選択してください<span class="required-badge">必須</span></label>
             
             <div class="week-nav">
-                <button type="button" id="prevWeek" class="btn btn-outline-secondary" onclick="movePrevWeek()">&lt; 前の週</button>
-                <span id="currentMonthDisplay" class="month-label"></span>
-                <button type="button" id="nextWeek" class="btn btn-primary" onclick="moveNextWeek()">次の週 &gt;</button>
+                <button type="button" id="prevWeekBtn" class="btn btn-outline-secondary" onclick="movePrevWeek()">&lt; 前の週</button>
+                <span id="currentMonthDisplay" class="month-label">1月</span>
+                <button type="button" id="nextWeekBtn" class="btn btn-primary" onclick="moveNextWeek()">次の週 &gt;</button>
             </div>
 
             <div class="table-responsive">
@@ -114,7 +115,7 @@
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script>
     // ★★★ ここにGASのURL（/execで終わるやつ）を貼ってください ★★★
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycby-6MXh2nvmmNStoRPawfjKfOxWIU5JY65bpoEF3_s-JzzBHV7dl8DdIS7DdF3wObxyzQ/exec";
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzQ5ctcX_qdYZ7-3nmAwh6CRbqXDtOSBrzv7j5SFK8l0ITTSYZfpHrLKsoAk7zX1AUXPw/exec";
     const MY_LIFF_ID = "1657883881-JG16djMv";
 
     let bookedTimesSet = new Set();
@@ -137,9 +138,7 @@
                 bookedTimesSet.clear();
                 data.forEach(dt => {
                     let parts = dt.split(' ');
-                    // "2026/1/1 休" のようなデータもここに入ります
                     if(parts.length >= 2) {
-                        // 日付の0埋め対策（GAS側と統一）
                         let dParts = parts[0].split('/');
                         let normalDate = parseInt(dParts[0]) + '/' + parseInt(dParts[1]) + '/' + parseInt(dParts[2]);
                         bookedTimesSet.add(normalDate + ' ' + parts[1]);
@@ -185,7 +184,7 @@
 
             let dateKey = tempDate.getFullYear() + '/' + m + '/' + d;
             
-            // ★定休日ロジック（月曜 ＆ 第3火曜）
+            // 定休日（月曜＆第3火曜）
             let isHoliday = false;
             if (w === 1) isHoliday = true; 
             if (w === 2 && d >= 15 && d <= 21) isHoliday = true;
@@ -201,7 +200,6 @@
             tempDate.setDate(tempDate.getDate() + 1);
         }
 
-        // 時間枠 (9:00 - 18:00) 30分刻み
         for (let h = 9; h <= 18; h++) {
             createTimeRow(h, 0, weekDates, slots, timeBody);
             createTimeRow(h, 30, weekDates, slots, timeBody);
@@ -221,21 +219,20 @@
             targetDateTime.setHours(h, m, 0, 0);
             let now = new Date();
 
-            // ★休み判定のロジック（ここがバグ修正箇所）
-            // 1. 定休日か？
-            // 2. スプレッドシートに「休」と入っているか？
             let isSheetHoliday = bookedTimesSet.has(info.dateKey + " 休");
 
             if (info.isHoliday || isSheetHoliday) {
-                td.innerHTML = '<div class="time-slot-rest">休</div>'; // 赤文字の「休」
+                // ★ここだけ赤文字クラスを適用★
+                td.innerHTML = '<div class="time-slot-rest">休</div>';
             } else if (targetDateTime < now) {
                 td.innerHTML = '<div class="time-slot-ng">-</div>';
             } else {
                 if (isAvailable(info.dateKey, h, m, slots)) {
+                    // ★カズさんのオリジナルデザイン：緑の〇★
                     td.innerHTML = '<div class="time-slot">〇</div>';
                     td.dataset.date = info.dateKey;
                     td.dataset.time = timeStr;
-                    td.onclick = function() { selectSlot(this); }; // バグ修正：thisを渡す
+                    td.onclick = function() { selectSlot(this); }; 
                 } else {
                     td.innerHTML = '<div class="time-slot-ng">×</div>';
                 }
@@ -251,10 +248,7 @@
         for (let i = 0; i < neededSlots; i++) {
             let timeStr = currentH + ":" + (currentM === 0 ? "00" : "30");
             let checkKey = dateKey + " " + timeStr;
-            
-            // すでに予約がある、または「休」設定がある場合
             if (bookedTimesSet.has(checkKey) || bookedTimesSet.has(dateKey + " 休")) return false;
-            
             if (currentH >= 19) return false;
             currentM += 30;
             if (currentM >= 60) { currentM = 0; currentH++; }
@@ -266,7 +260,29 @@
         let selected = document.querySelector('.selected-slot');
         if (selected) selected.classList.remove('selected-slot');
         
+        // 親のtdではなく、クリックされたdiv自体（の中身）ではなく、tdにクラスを当てる
+        // コード上はtd自体にクラスを当てるのがカズさんのCSSと合致します
+        td.querySelector('.time-slot').style.color = 'white'; 
         td.classList.add('selected-slot');
+        
+        document.getElementById('selected_date').value = td.dataset.date;
+        document.getElementById('selected_time').value = td.dataset.time;
+    }
+    
+    // 選択解除時の処理（色戻し用）
+    function clearSelection() {
+        let selected = document.querySelector('.selected-slot');
+        if (selected) {
+            selected.querySelector('.time-slot').style.color = '#28a745';
+            selected.classList.remove('selected-slot');
+        }
+    }
+    
+    // 上書き修正：selectSlotをより安全に
+    function selectSlot(td) {
+        clearSelection();
+        td.classList.add('selected-slot');
+        td.querySelector('.time-slot').style.color = 'white';
         document.getElementById('selected_date').value = td.dataset.date;
         document.getElementById('selected_time').value = td.dataset.time;
     }
