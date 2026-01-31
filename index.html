@@ -4,31 +4,29 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>予約カレンダー</title>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@700;900&display=swap" rel="stylesheet">
   <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    /* 全体のフォントを力強いものに変更 */
     body {
         background-color: #f8f9fa;
         color: #333;
-        font-family: 'Noto Sans JP', sans-serif; /* ここを変更 */
+        font-family: sans-serif; /* 普通のフォントに戻しました */
         padding-bottom: 40px;
     }
     .container { max-width: 600px; background: white; padding: 20px; margin-top: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
     
     /* カレンダーのデザイン */
     .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-    .calendar-title { font-size: 1.3rem; font-weight: 900; } /* タイトルも太く */
+    .calendar-title { font-size: 1.2rem; font-weight: bold; }
     .calendar-table { width: 100%; table-layout: fixed; border-collapse: collapse; }
-    .calendar-table th { text-align: center; font-size: 0.9rem; color: #666; padding-bottom: 5px; font-weight: bold; } /* 曜日も太く */
-    .calendar-table td { text-align: center; vertical-align: middle; height: 55px; border: 1px solid #f0f0f0; cursor: pointer; position: relative; }
+    .calendar-table th { text-align: center; font-size: 0.8rem; color: #666; padding-bottom: 5px; }
+    .calendar-table td { text-align: center; vertical-align: middle; height: 50px; border: 1px solid #f0f0f0; cursor: pointer; position: relative; }
     
-    /* 日付の数字を画像のように大きく、太くする */
+    /* 日付の数字（小さく、普通に戻しました） */
     .day-number {
-        font-size: 1.4rem; /* サイズを大きく */
-        font-weight: 900;  /* 最大級の太さ */
+        font-size: 1rem; /* 普通のサイズ */
+        font-weight: normal; /* 太字解除 */
         display: block;
-        line-height: 1;
+        margin-top: 2px;
     }
 
     .calendar-table td:hover { background-color: #f9f9f9; }
@@ -36,30 +34,40 @@
     
     /* 過去の日付 */
     .calendar-table td.disabled { color: #ccc; cursor: default; background-color: #fafafa; }
-    .calendar-table td.disabled .day-number { color: #ccc; }
     
     /* 今日の日付 */
-    .calendar-table td.today .day-number { color: #00B900; }
+    .calendar-table td.today .day-number { font-weight: bold; color: #00B900; }
+    .calendar-table td.today.selected .day-number { color: white; }
     
-    /* ★定休日のスタイル（赤文字＆選択不可）★ */
+    /* ★定休日（月曜＆第3火曜）★ */
     .calendar-table td.holiday {
         background-color: #fff5f5; /* 薄い赤背景 */
         cursor: default;
-        pointer-events: none; /* クリック禁止 */
+        pointer-events: none;
     }
     .calendar-table td.holiday .day-number {
         color: #dc3545; /* 赤文字 */
     }
 
-    /* 曜日ごとの色 */
+    /* 土日の色 */
     .th-sun { color: #dc3545 !important; }
     .th-sat { color: #007bff !important; }
+    .day-sun .day-number { color: #dc3545; }
+    .day-sat .day-number { color: #007bff; }
     
-    /* フォーム関連 */
+    /* フォーム関連修正（ここがメニュー崩れの原因でした） */
     label { font-weight: bold; margin-top: 15px; color: #555; }
     .required-badge { background-color: #dc3545; color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; margin-left: 5px; vertical-align: middle; }
-    .form-control { -webkit-appearance: none; appearance: none; padding: 12px; font-size: 16px; font-weight: bold; } /* 入力欄も少し太く */
-    .btn-block { padding: 15px; font-size: 1.2rem; font-weight: bold; margin-top: 30px; border-radius: 8px; }
+    
+    /* 入力欄を標準的なスタイルに戻してバグを修正 */
+    .form-control { 
+        height: calc(1.5em + 1rem + 2px); 
+        padding: 0.5rem 1rem; 
+        font-size: 1rem; 
+        font-weight: normal;
+    }
+    
+    .btn-block { padding: 15px; font-size: 1.1rem; font-weight: bold; margin-top: 30px; border-radius: 8px; }
     
     /* 完了画面 */
     #success-area { display:none; text-align:center; padding-top:50px; }
@@ -69,7 +77,7 @@
 <body>
 
 <div class="container" id="booking-area">
-  <h4 class="text-center font-weight-bold text-success mb-4 pb-3 border-bottom" style="font-weight: 900;">WEB予約</h4>
+  <h5 class="text-center font-weight-bold text-success mb-4 pb-3 border-bottom">WEB予約</h5>
   
   <form id="bookingForm">
     <div class="form-group">
@@ -96,9 +104,9 @@
       <label>ご希望日<span class="required-badge">必須</span></label>
       <div id="calendar-wrapper">
         <div class="calendar-header">
-          <button type="button" class="btn btn-sm btn-outline-secondary font-weight-bold" onclick="prevMonth()">&lt; 前月</button>
+          <button type="button" class="btn btn-sm btn-outline-secondary" onclick="prevMonth()">&lt; 前月</button>
           <span class="calendar-title" id="calendarTitle"></span>
-          <button type="button" class="btn btn-sm btn-outline-secondary font-weight-bold" onclick="nextMonth()">次月 &gt;</button>
+          <button type="button" class="btn btn-sm btn-outline-secondary" onclick="nextMonth()">次月 &gt;</button>
         </div>
         <table class="calendar-table">
           <thead>
@@ -110,7 +118,7 @@
         </table>
       </div>
       <input type="hidden" name="date" id="dateInput" required>
-      <small class="text-muted">※赤文字の日は定休日です</small>
+      <small class="text-muted" style="font-size: 0.8rem;">※赤色の日は定休日です</small>
     </div>
 
     <div class="form-group" id="timeArea" style="display:none;">
@@ -118,7 +126,7 @@
       <select name="time" id="timeInput" class="form-control" required>
         <option value="">↑日付を選ぶと表示されます</option>
       </select>
-      <small id="loadingMsg" class="text-primary font-weight-bold" style="display:none;">空き状況を確認中...</small>
+      <small id="loadingMsg" class="text-primary" style="display:none;">空き状況を確認中...</small>
     </div>
     
     <div class="form-group">
@@ -132,9 +140,9 @@
 
 <div class="container" id="success-area">
   <div class="success-icon">✔</div>
-  <h4 class="font-weight-bold">予約を受け付けました</h4>
-  <p class="font-weight-bold">ご予約ありがとうございます。<br>確認後、LINEにてご連絡いたします。</p>
-  <button onclick="closeLiff()" class="btn btn-secondary mt-4 font-weight-bold">閉じる</button>
+  <h5>予約を受け付けました</h5>
+  <p>ご予約ありがとうございます。<br>確認後、LINEにてご連絡いたします。</p>
+  <button onclick="closeLiff()" class="btn btn-secondary mt-4">閉じる</button>
 </div>
 
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -166,7 +174,7 @@
       .then(res => res.json())
       .then(data => {
         bookedTimesAll = data;
-        console.log("予約データ取得完了", bookedTimesAll.length + "件");
+        console.log("取得件数:", bookedTimesAll.length);
       })
       .catch(err => console.error("通信エラー", err));
   }
@@ -222,7 +230,7 @@
 
     td.innerHTML = `<span class="day-number">${day}</span>`;
     
-    // ★定休日判定ロジック★
+    // ★定休日ロジック（月曜＆第3火曜）
     const dayOfWeek = dateObj.getDay(); // 0:日, 1:月, 2:火...
     let isHoliday = false;
 
@@ -230,19 +238,16 @@
     if (dayOfWeek === 1) {
         isHoliday = true;
     }
-    // 第3火曜日 (2) ※日付が15日～21日の間の火曜日
+    // 第3火曜日 (2) ※15日～21日の間の火曜日
     else if (dayOfWeek === 2 && day >= 15 && day <= 21) {
         isHoliday = true;
     }
 
     if (isHoliday) {
-        // 定休日の場合
         td.classList.add('holiday');
     } else if (dateObj < today) {
-        // 過去の日付の場合
         td.classList.add('disabled');
     } else {
-        // 予約可能な日の場合
         td.onclick = function() { selectDate(this, dateStr); };
     }
 
