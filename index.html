@@ -7,36 +7,76 @@
   <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet">
   <style>
     body { background-color: #f8f9fa; color: #333; font-family: sans-serif; padding-bottom: 40px; }
-    .container { max-width: 600px; background: white; padding: 20px; margin-top: 10px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+    .container { max-width: 600px; background: white; padding: 15px; margin-top: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
 
     /* タイトルなどのスタイル */
-    h5 { font-weight: bold; color: #00B900; border-bottom: 2px solid #f1f1f1; padding-bottom: 15px; margin-bottom: 20px; text-align: center; }
+    h5 { font-weight: bold; color: #333; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 20px; text-align: center; }
     label { font-weight: bold; margin-top: 10px; color: #555; font-size: 0.9rem; }
     .required-badge { background-color: #dc3545; color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; margin-left: 5px; vertical-align: middle; }
     .form-control { font-size: 1rem; }
 
-    /* ★週間カレンダーのスタイル★ */
-    .week-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .current-month { font-size: 1.1rem; font-weight: bold; } /* 太すぎず普通に */
+    /* ★週間カレンダーのスタイル（画像に合わせる）★ */
+    .week-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 0 5px; }
+    .current-month { font-size: 1.2rem; font-weight: bold; }
 
     .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     .calendar-table { width: 100%; min-width: 350px; border-collapse: collapse; table-layout: fixed; }
     
-    .calendar-table th { text-align: center; font-size: 0.8rem; background: #f8f9fa; padding: 5px 0; border: 1px solid #dee2e6; }
-    .calendar-table td { text-align: center; vertical-align: middle; height: 45px; border: 1px solid #dee2e6; font-size: 1.2rem; cursor: pointer; }
+    /* ヘッダー（日付） */
+    .calendar-table th { 
+        text-align: center; 
+        font-size: 0.85rem; 
+        padding: 8px 0; 
+        border: 1px solid #dee2e6; 
+        font-weight: bold;
+        background: #fff;
+    }
+    
+    /* 時間セルと中身 */
+    .calendar-table td { 
+        text-align: center; 
+        vertical-align: middle; 
+        height: 50px; 
+        border: 1px solid #dee2e6; 
+        font-size: 1.2rem; 
+        cursor: pointer; 
+        background: #fff;
+    }
+
+    /* 時間列 */
+    .time-col {
+        font-size: 0.75rem !important;
+        font-weight: bold;
+        background-color: #f8f9fa !important;
+        color: #333;
+        width: 50px;
+    }
 
     /* 記号のスタイル */
-    .symbol-ok { color: #00B900; font-weight: bold; } /* ◯ */
-    .symbol-ng { color: #ccc; font-size: 1rem; } /* × */
-    .symbol-rest { color: #dc3545; font-size: 0.9rem; } /* 休 */
+    .symbol-ok { 
+        color: #00B900; 
+        font-weight: bold; 
+        font-size: 1.4rem;
+        display: inline-block;
+        border: 2px solid #00B900;
+        border-radius: 50%;
+        width: 28px;
+        height: 28px;
+        line-height: 24px;
+    } /* 緑の丸 */
+    
+    .symbol-ng { color: #ccc; font-size: 1.2rem; } /* グレーの× */
+    .symbol-rest { color: #ff8888; font-size: 0.9rem; } /* 薄い赤の休 */
 
     /* 選択されたセル */
-    .calendar-table td.selected { background-color: #00B900; color: white !important; }
-    .calendar-table td.selected .symbol-ok { color: white; }
+    .calendar-table td.selected { background-color: #e6fffa !important; }
+    .calendar-table td.selected .symbol-ok { background-color: #00B900; color: white; }
 
     /* 曜日色 */
-    .th-sun { color: #dc3545; background-color: #fff0f0 !important; }
-    .th-sat { color: #007bff; background-color: #f0f8ff !important; }
+    .th-sun { color: #dc3545; }
+    .th-sat { color: #007bff; }
+    .date-num { font-size: 1.1rem; display: block; }
+    .day-label { font-size: 0.7rem; display: block; }
 
     /* 完了画面 */
     #success-area { display:none; text-align:center; padding-top:50px; }
@@ -48,34 +88,31 @@
 <div class="container" id="booking-area">
   
   <form id="bookingForm">
-    <div class="form-group">
-      <label>お名前<span class="required-badge">必須</span></label>
-      <input type="text" name="name" class="form-control" placeholder="例：ビューテイー 花子" required>
+    
+    <div class="text-center mb-3">
+        <small class="text-muted">予約日時を選択してください <span class="badge badge-danger">必須</span></small>
     </div>
 
     <div class="form-group">
-      <label>メニュー<span class="required-badge">必須</span></label>
-      <select name="menu" id="menuInput" class="form-control" required onchange="renderWeekCalendar()">
-        <option value="" data-slots="0">▼メニューを選択してください</option>
-        <option value="カット" data-slots="2">カット（約60分）</option>
-        <option value="カラー＋カット" data-slots="5">カラー＋カット（約150分）</option>
-        <option value="パーマ＋カット" data-slots="5">パーマ＋カット（約150分）</option>
-        <option value="トリートメント" data-slots="2">トリートメント（約40分）</option>
-        <option value="縮毛矯正＋カット" data-slots="6">縮毛矯正＋カット（約180分）</option>
-        <option value="まつ毛パーマ" data-slots="2">まつ毛パーマ（60分）</option>
-        <option value="まつげエクステ" data-slots="3">まつげエクステ（90分）</option>
-        <option value="着付け" data-slots="2">着付け（約60分）</option>
-      </select>
-      <small class="text-muted" style="font-size: 0.75rem;">※メニューを選ぶと空き状況が表示されます</small>
+        <select name="menu" id="menuInput" class="form-control" required onchange="renderWeekCalendar()">
+          <option value="" data-slots="0">▼メニューを選択（空き状況が表示されます）</option>
+          <option value="カット" data-slots="2">カット（約60分）</option>
+          <option value="カラー＋カット" data-slots="5">カラー＋カット（約150分）</option>
+          <option value="パーマ＋カット" data-slots="5">パーマ＋カット（約150分）</option>
+          <option value="トリートメント" data-slots="2">トリートメント（約40分）</option>
+          <option value="縮毛矯正＋カット" data-slots="6">縮毛矯正＋カット（約180分）</option>
+          <option value="まつ毛パーマ" data-slots="2">まつ毛パーマ（60分）</option>
+          <option value="まつげエクステ" data-slots="3">まつげエクステ（90分）</option>
+          <option value="着付け" data-slots="2">着付け（約60分）</option>
+        </select>
     </div>
 
     <div class="form-group" id="calendarGroup" style="display:none;">
-      <label>日時を選択<span class="required-badge">必須</span></label>
       
       <div class="week-nav">
         <button type="button" class="btn btn-sm btn-outline-secondary" onclick="prevWeek()">&lt; 前の週</button>
         <span class="current-month" id="currentMonthLabel"></span>
-        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="nextWeek()">次の週 &gt;</button>
+        <button type="button" class="btn btn-sm btn-primary" onclick="nextWeek()">次の週 &gt;</button>
       </div>
 
       <div class="table-responsive">
@@ -93,15 +130,22 @@
       </div>
     </div>
 
-    <input type="hidden" name="date" id="selectedDate">
-    <input type="hidden" name="time" id="selectedTime">
-    
-    <div class="form-group">
-      <label>お問い合わせ</label>
-      <textarea name="inquiry" class="form-control" rows="3" placeholder="ご要望など"></textarea>
+    <div id="userInfoArea" style="display:none; margin-top:20px; border-top:1px solid #eee; padding-top:20px;">
+        <div class="form-group">
+            <label>お名前<span class="required-badge">必須</span></label>
+            <input type="text" name="name" class="form-control" placeholder="例：ビューティー 花子" required>
+        </div>
+        <div class="form-group">
+            <label>お問い合わせ</label>
+            <textarea name="inquiry" class="form-control" rows="2" placeholder="ご要望など"></textarea>
+        </div>
+        
+        <input type="hidden" name="date" id="selectedDate">
+        <input type="hidden" name="time" id="selectedTime">
+
+        <button type="button" id="submitBtn" class="btn btn-success btn-block" onclick="submitData()">予約を確定する</button>
     </div>
 
-    <button type="button" id="submitBtn" class="btn btn-success btn-block" onclick="submitData()" disabled>予約を確定する</button>
   </form>
 </div>
 
@@ -118,7 +162,7 @@
   const GAS_API_URL = "https://script.google.com/macros/s/AKfycby7T82gguG2KXD37D0Se-JN7ZgzhW2Rp51bpnQggd8bM41im4VHDDZIgPXxxDUSYg45RA/exec";
   const MY_LIFF_ID = "1657883881-JG16djMv";
 
-  let bookedTimesAll = [];
+  let bookedTimesSet = new Set(); // 予約データを扱いやすくSetで保存
   let currentBaseDate = new Date(); // 表示中の週の基準日
 
   window.onload = function() {
@@ -137,9 +181,20 @@
     fetch(GAS_API_URL + '?p=json')
       .then(res => res.json())
       .then(data => {
-        bookedTimesAll = data;
+        // ★重要：データの形式を統一する（0埋めなしに変換して保存）
+        bookedTimesSet.clear();
+        data.forEach(dt => {
+            // dt は "2026/01/31 16:00" または "2026/1/31 16:00" など
+            let parts = dt.split(' ');
+            if(parts.length === 2) {
+                let dParts = parts[0].split('/');
+                // 年/月/日 を数値変換して再度結合（これで0埋め問題を解消）
+                let normalDate = parseInt(dParts[0]) + '/' + parseInt(dParts[1]) + '/' + parseInt(dParts[2]);
+                bookedTimesSet.add(normalDate + ' ' + parts[1]);
+            }
+        });
+        
         document.getElementById('loadingMsg').style.display = 'none';
-        // データが取れたらカレンダーを表示（メニューが選ばれていれば）
         renderWeekCalendar();
       })
       .catch(err => {
@@ -148,7 +203,7 @@
       });
   }
 
-  // 1週間のカレンダーを描画する心臓部
+  // 1週間のカレンダーを描画
   function renderWeekCalendar() {
     const menuSelect = document.getElementById('menuInput');
     const slots = parseInt(menuSelect.options[menuSelect.selectedIndex].getAttribute('data-slots') || 0);
@@ -156,13 +211,14 @@
     // メニュー未選択ならカレンダーを出さない
     if (slots === 0) {
       document.getElementById('calendarGroup').style.display = 'none';
+      document.getElementById('userInfoArea').style.display = 'none';
       return;
     }
     document.getElementById('calendarGroup').style.display = 'block';
 
     const headerRow = document.getElementById('dateHeader');
     const timeBody = document.getElementById('timeBody');
-    headerRow.innerHTML = '<th style="width: 50px; background:#eee;">時間</th>'; // 左上の空セル
+    headerRow.innerHTML = '<th style="width: 50px; background:#f8f9fa;">時間</th>';
     timeBody.innerHTML = '';
 
     // 今週の日曜日にセット
@@ -182,85 +238,85 @@
       if (w === 0) thClass = 'th-sun';
       if (w === 6) thClass = 'th-sat';
 
-      let yyyy = tempDate.getFullYear();
-      let mm = ("0" + m).slice(-2);
-      let dd = ("0" + d).slice(-2);
-      let dateStr = `${yyyy}/${mm}/${dd}`; // 2026/02/01
+      // 比較用の日付文字列（0埋めなし： 2026/1/1）
+      let dateKey = tempDate.getFullYear() + '/' + m + '/' + d;
+      // 表示用の日付
+      let displayDate = `${d}`;
 
       // 定休日判定（月曜 or 第3火曜）
       let isHoliday = false;
       if (w === 1) isHoliday = true; // 毎週月曜
       if (w === 2 && d >= 15 && d <= 21) isHoliday = true; // 第3火曜
 
-      weekDates.push({ dateStr: dateStr, isHoliday: isHoliday });
+      weekDates.push({ dateKey: dateKey, isHoliday: isHoliday, dateObj: new Date(tempDate) });
 
-      // ヘッダーHTML追加
-      let thHtml = `<th class="${thClass}">${d}<br><small>(${days[w]})</small></th>`;
+      // ヘッダーHTML
+      let thHtml = `<th class="${thClass}"><span class="date-num">${d}</span><span class="day-label">(${days[w]})</span></th>`;
       headerRow.insertAdjacentHTML('beforeend', thHtml);
 
-      // 月の表示を更新（最初の日の月を表示）
+      // 月の表示を更新
       if (i === 0) {
-        document.getElementById('currentMonthLabel').innerText = `${yyyy}年 ${m}月`;
+        document.getElementById('currentMonthLabel').innerText = `${m}月`;
       }
 
-      tempDate.setDate(tempDate.getDate() + 1); // 翌日へ
+      tempDate.setDate(tempDate.getDate() + 1);
     }
 
-    // 時間枠（行）を作る (9:00 - 18:00)
-    for (let h = 9; h <= 18; h++) { // 19時までやるなら h<=18 にしてループ内で考慮
-       let timeStr = h + ":00";
-       let tr = document.createElement('tr');
-       
-       // 左端の時間セル
-       tr.innerHTML = `<td style="font-weight:bold; font-size:0.8rem; background:#fcfcfc;">${timeStr}</td>`;
+    // 時間枠を作る (9:00 - 19:00, 30分間隔)
+    for (let h = 9; h < 19; h++) {
+       for (let m = 0; m < 60; m += 30) {
+           let timeStr = h + ":" + (m === 0 ? "00" : "30");
+           let tr = document.createElement('tr');
+           
+           // 左端の時間セル
+           tr.innerHTML = `<td class="time-col">${timeStr}</td>`;
 
-       // 7日分ループ
-       for (let i = 0; i < 7; i++) {
-         let info = weekDates[i];
-         let td = document.createElement('td');
-         
-         // 過去の日時かチェック
-         let targetDateTime = new Date(info.dateStr + ' ' + timeStr);
-         let now = new Date();
+           // 7日分ループ
+           for (let i = 0; i < 7; i++) {
+             let info = weekDates[i];
+             let td = document.createElement('td');
+             
+             // 過去の日時かチェック
+             let targetDateTime = new Date(info.dateObj);
+             targetDateTime.setHours(h, m, 0, 0);
+             let now = new Date();
 
-         if (info.isHoliday) {
-           // 定休日
-           td.innerHTML = '<span class="symbol-rest">休</span>';
-           td.style.backgroundColor = '#fff5f5';
-         } else if (targetDateTime < now) {
-           // 過去
-           td.innerHTML = '<span class="symbol-ng">-</span>';
-           td.style.backgroundColor = '#fafafa';
-         } else {
-           // 空き状況チェック（ここがスマート予約！）
-           if (isAvailable(info.dateStr, h, 0, slots)) {
-             td.innerHTML = '<span class="symbol-ok">◎</span>';
-             td.onclick = function() { selectSlot(this, info.dateStr, timeStr); };
-           } else {
-             td.innerHTML = '<span class="symbol-ng">×</span>';
+             if (info.isHoliday) {
+               // 定休日
+               td.innerHTML = '<span class="symbol-rest">休</span>';
+               td.style.backgroundColor = '#fff5f5';
+             } else if (targetDateTime < now) {
+               // 過去
+               td.innerHTML = '<span class="symbol-ng">×</span>';
+               td.style.backgroundColor = '#fafafa';
+               td.style.color = '#eee';
+             } else {
+               // 空き状況チェック
+               if (isAvailable(info.dateKey, h, m, slots)) {
+                 td.innerHTML = '<span class="symbol-ok">◯</span>';
+                 td.onclick = function() { selectSlot(this, info.dateKey, timeStr); };
+               } else {
+                 td.innerHTML = '<span class="symbol-ng">×</span>';
+               }
+             }
+             tr.appendChild(td);
            }
-         }
-         tr.appendChild(td);
+           timeBody.appendChild(tr);
        }
-       timeBody.appendChild(tr);
     }
   }
 
   // 指定した日時から slots 分連続で空いているかチェック
-  function isAvailable(dateStr, startH, startM, neededSlots) {
+  function isAvailable(dateKey, startH, startM, neededSlots) {
     let currentH = startH;
     let currentM = startM;
 
-    // その日の予約リストを抽出
-    let bookedToday = bookedTimesAll
-        .filter(dt => dt.startsWith(dateStr))
-        .map(dt => dt.split(' ')[1]); // ["10:00", "13:00"]
-
     for (let i = 0; i < neededSlots; i++) {
       let timeStr = currentH + ":" + (currentM === 0 ? "00" : "30");
+      let checkKey = dateKey + " " + timeStr;
 
-      // 1. すでに予約が入っているか？
-      if (bookedToday.indexOf(timeStr) !== -1) return false;
+      // 1. すでに予約が入っているか？（Setで高速チェック）
+      if (bookedTimesSet.has(checkKey)) return false;
       
       // 2. 閉店時間(19:00)を超えるか？
       if (currentH >= 19) return false;
@@ -288,8 +344,11 @@
     document.getElementById('selectedDate').value = date;
     document.getElementById('selectedTime').value = time;
     
-    // ボタン有効化
-    document.getElementById('submitBtn').disabled = false;
+    // 名前入力欄を表示
+    document.getElementById('userInfoArea').style.display = 'block';
+    
+    // スクロール
+    document.getElementById('userInfoArea').scrollIntoView({behavior: "smooth"});
   }
 
   function prevWeek() {
@@ -315,7 +374,7 @@
       slots: slots
     };
 
-    if(!data.date || !data.time) { alert("日時を選択してください"); return; }
+    if(!data.date || !data.time || !data.name) { alert("日時とお名前を入力してください"); return; }
 
     var btn = document.getElementById('submitBtn');
     btn.disabled = true;
