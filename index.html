@@ -41,32 +41,33 @@
 
 <div class="container" id="booking-form">
     
-    <div class="form-group">
-        <label>お名前<span class="required-badge">必須</span></label>
-        <input type="text" name="namelabel" class="form-control" placeholder="例：ビューティー太郎" required>
-    </div>
-
-    <div style="margin-top: 30px;">
-        <label>予約日時を選択してください<span class="required-badge">必須</span></label>
-        
-        <div class="week-nav">
-            <button id="prevWeek" class="btn btn-outline-secondary">&lt; 前の週</button>
-            <span id="currentMonthDisplay" class="month-label">1月</span>
-            <button id="nextWeek" class="btn btn-primary">次の週 &gt;</button>
-        </div>
-
-        <div class="table-responsive">
-            <table class="table table-bordered">
-                <thead><tr id="dateHeader"></tr></thead>
-                <tbody id="timeBody"></tbody>
-            </table>
-        </div>
-        <div class="text-center text-muted mb-3" style="font-size:0.85rem;">
-            ※「〇」をタップして時間を選択してください
-        </div>
-    </div>
-
     <form method="post" target="hidden_iframe">
+        
+        <div class="form-group">
+            <label>お名前<span class="required-badge">必須</span></label>
+            <input type="text" name="namelabel" class="form-control" placeholder="例：BEAUTY SALON ODA" required>
+        </div>
+
+        <div style="margin-top: 30px;">
+            <label>予約日時を選択してください<span class="required-badge">必須</span></label>
+            
+            <div class="week-nav">
+                <button type="button" id="prevWeek" class="btn btn-outline-secondary">&lt; 前の週</button>
+                <span id="currentMonthDisplay" class="month-label">1月</span>
+                <button type="button" id="nextWeek" class="btn btn-primary">次の週 &gt;</button>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead><tr id="dateHeader"></tr></thead>
+                    <tbody id="timeBody"></tbody>
+                </table>
+            </div>
+            <div class="text-center text-muted mb-3" style="font-size:0.85rem;">
+                ※「〇」をタップして時間を選択してください
+            </div>
+        </div>
+
         <input type="hidden" id="selected_date" name="date">
         <input type="hidden" id="selected_time" name="minute">
 
@@ -108,7 +109,7 @@
 
         <input type="submit" class="btn btn-success btn-block" value="予約を確定する">
     </form>
-</div>
+    </div>
 
 <div class="container" id="success-area" style="display:none; text-align:center; padding-top:80px;">
     <div class="success-icon">✔</div>
@@ -124,7 +125,7 @@
 
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-<script src="index.js?v=restore-2026-0131-1"></script>   
+<script src="index.js"></script>
 
 </body>
 </html>
